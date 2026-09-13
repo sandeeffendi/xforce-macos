@@ -127,11 +127,15 @@ Tests use **Swift Testing** (`import Testing`, `@Test`, `#expect`) in the `xforc
 target. Test-driven: write the failing test first, watch it fail, then implement.
 
 ```sh
-xcodebuild -project xforce.xcodeproj -scheme xforce build
-xcodebuild -project xforce.xcodeproj -scheme xforce test
+xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/DerivedData build
+xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/DerivedData test
 ```
 
 Never report a change as working without running both.
+
+`-derivedDataPath` is required, not optional. Work happens in several git worktrees at once,
+and without it they all contend on one shared derived data directory. `.build/` is already
+gitignored, so building this way leaves the tree clean.
 
 ## Xcode project
 
