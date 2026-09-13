@@ -176,6 +176,13 @@ xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/Deri
 
 Never report a change as working without running both.
 
+One suite is deliberately **not** in that run: the prompt regression suite makes real calls to
+the on-device model, so it needs eligible hardware, it is slow, and it is not deterministic. It
+is gated behind `XFORCE_PROMPT_REGRESSION`, and the default run above passes on a Mac with no
+Apple Intelligence at all. How to run it, and why a failure after an operating system update
+means revisiting the prompt rather than the expectations, is in
+[docs/system-design.md](./docs/system-design.md#the-prompt-regression-suite).
+
 `-derivedDataPath` is required, not optional. Work happens in several git worktrees at once,
 and without it they all contend on one shared derived data directory. `.build/` is already
 gitignored, so building this way leaves the tree clean.
