@@ -17,6 +17,7 @@ enum RouteBuilder {
     static func view(for route: AppRoute) -> some View {
         switch route {
         case .explain: ExplainScreen()
+        case .session(let conceptID): ExplainScreen(conceptID: conceptID)
         case .graph: GraphScreen()
         }
     }

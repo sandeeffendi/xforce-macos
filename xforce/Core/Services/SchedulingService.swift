@@ -111,6 +111,21 @@ final class SchedulingService {
             }
     }
 
+    /// Every note the learner has written about one concept, oldest first.
+    ///
+    /// The order is sorted in the fetch rather than afterwards, because it is the thing the
+    /// history is *for*: a concept is a long-lived entity with many notes over time, and the
+    /// sequence of them is the evidence of understanding changing. Sorting where the records
+    /// are read keeps that out of the hands of anything that merely renders them.
+    func notes(forConceptID id: String) throws -> [Note] {
+        try modelContext.fetch(
+            FetchDescriptor<Note>(
+                predicate: #Predicate<Note> { $0.conceptID == id },
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+            )
+        )
+    }
+
     /// Every snippet the learner has worked through, against the last time they saw it.
     ///
     /// This is what keeps snippet selection deterministic without the selection rule knowing

@@ -16,6 +16,13 @@ struct ConceptGraphView: View {
     let nodes: [ConceptNode]
     let edges: [ConceptEdge]
 
+    /// The concept whose history is open, drawn with a ring so the map says which one the
+    /// inspector is talking about.
+    let selectedID: String?
+
+    /// What clicking a node means: open that concept's notes.
+    let onSelect: (String) -> Void
+
     /// The mark and its name grow with the learner's text size, and the inset that keeps an
     /// edge-of-the-square node on screen has to grow with them.
     @ScaledMetric(relativeTo: .caption) private var nodeDiameter = Theme.Size.graphNodeDiameter
@@ -33,8 +40,14 @@ struct ConceptGraphView: View {
                 ConceptEdgeCanvas(edges: edges, points: layout.points(for: nodes))
 
                 ForEach(nodes) { node in
-                    ConceptNodeView(node: node, diameter: nodeDiameter, labelWidth: labelWidth)
-                        .position(layout.point(for: node.position))
+                    ConceptNodeView(
+                        node: node,
+                        diameter: nodeDiameter,
+                        labelWidth: labelWidth,
+                        isSelected: node.id == selectedID,
+                        onSelect: { onSelect(node.id) }
+                    )
+                    .position(layout.point(for: node.position))
                 }
             }
         }
@@ -108,37 +121,65 @@ private struct ConceptEdgeCanvas: View {
 }
 
 /// One concept: the mark for its mastery level, with the concept's name under it.
+///
+/// A button rather than a decoration, because the graph is a way into the learner's own
+/// record rather than a picture of it. The ring says which concept the inspector is currently
+/// talking about; the padding under it is always there, so selecting one never shifts the map.
 private struct ConceptNodeView: View {
 
     let node: ConceptNode
     let diameter: CGFloat
     let labelWidth: CGFloat
+    let isSelected: Bool
+    let onSelect: () -> Void
 
     var body: some View {
-        VStack(spacing: Theme.Spacing.xSmall) {
-            MasteryDot(level: node.mastery, diameter: diameter)
+        Button(action: onSelect) {
+            VStack(spacing: Theme.Spacing.xSmall) {
+                MasteryDot(level: node.mastery, diameter: diameter)
+                    .padding(Theme.Spacing.xSmall)
+                    .overlay {
+                        if isSelected {
+                            Circle()
+                                .strokeBorder(Theme.Color.brand, lineWidth: Theme.Size.graphNodeBorder)
+                        }
+                    }
 
-            Text(node.name)
-                .font(Theme.Font.caption)
-                .foregroundStyle(Theme.Color.secondaryText)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: labelWidth)
+                Text(node.name)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(isSelected ? Theme.Color.primaryText : Theme.Color.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: labelWidth)
+            }
         }
+        .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(node.name), \(node.mastery.title)")
+        .accessibilityHint("Shows the notes you have written about this concept.")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 
 #Preview("Light") {
-    ConceptGraphView(nodes: .previewNodes, edges: .previewEdges)
-        .background(Theme.Color.windowBackground)
-        .preferredColorScheme(.light)
+    ConceptGraphView(
+        nodes: .previewNodes,
+        edges: .previewEdges,
+        selectedID: "optionals",
+        onSelect: { _ in }
+    )
+    .background(Theme.Color.windowBackground)
+    .preferredColorScheme(.light)
 }
 
 #Preview("Dark") {
-    ConceptGraphView(nodes: .previewNodes, edges: .previewEdges)
-        .background(Theme.Color.windowBackground)
-        .preferredColorScheme(.dark)
+    ConceptGraphView(
+        nodes: .previewNodes,
+        edges: .previewEdges,
+        selectedID: "optionals",
+        onSelect: { _ in }
+    )
+    .background(Theme.Color.windowBackground)
+    .preferredColorScheme(.dark)
 }
 
 private extension [ConceptNode] {
