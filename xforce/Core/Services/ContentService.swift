@@ -61,10 +61,10 @@ final class ContentService {
     /// The rule that rejected the content, or `nil` when the content is usable.
     private(set) var failure: ContentError?
 
-    /// Loads and validates the content shipped in `bundle`.
-    init(bundle: Bundle = .main) {
+    /// Loads and validates the content shipped in the app bundle.
+    init() {
         do {
-            adopt(try Self.validated(Self.decodeLibrary(from: bundle)))
+            adopt(try Self.validated(Self.decodeLibrary()))
         } catch let error as ContentError {
             failure = error
         } catch {
@@ -93,17 +93,13 @@ final class ContentService {
         concepts.first { $0.id == id }
     }
 
-    func snippets(forConceptID id: String) -> [Snippet] {
-        snippets.filter { $0.conceptID == id }
-    }
-
     private func adopt(_ library: ContentLibrary) {
         concepts = library.concepts
         snippets = library.snippets
     }
 
-    private static func decodeLibrary(from bundle: Bundle) throws -> ContentLibrary {
-        guard let url = bundle.url(forResource: Self.resourceName, withExtension: "json") else {
+    private static func decodeLibrary() throws -> ContentLibrary {
+        guard let url = Bundle.main.url(forResource: Self.resourceName, withExtension: "json") else {
             throw ContentError.unreadable("\(Self.resourceName).json is not in the bundle")
         }
 

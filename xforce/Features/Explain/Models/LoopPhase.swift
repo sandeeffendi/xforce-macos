@@ -14,7 +14,7 @@ import Foundation
 /// This slice implements `prompt` and `reveal`. The later phases are declared here because
 /// the ordering is the mechanism, and a phase that appears later cannot be inserted without
 /// re-deciding what "forward" means.
-nonisolated enum LoopPhase: Int, Comparable, CaseIterable, Sendable {
+nonisolated enum LoopPhase: Int, Comparable, Sendable {
 
     /// Both fields open, feedback panel locked.
     case prompt

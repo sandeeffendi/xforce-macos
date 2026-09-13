@@ -84,7 +84,9 @@ URL Types (this cannot be expressed through `GENERATE_INFOPLIST_FILE`).
 ## MVVM
 
 - **View** (`<Feature>Screen`) is passive. It renders state and forwards user intent to the
-  view model. It owns its view model with `@State private var viewModel = ...`.
+  view model. It owns its view model with `@State private var viewModel = ...`. When that
+  view model needs a service, see *Getting a service into a view model* below — the
+  environment is not readable at the point that `@State` is initialised.
 - **ViewModel** is a `@MainActor @Observable final class`. It holds view state and exposes
   intent methods. It contains no SwiftUI types beyond what it strictly needs.
 - **Model** is plain Swift. No SwiftUI, no view-model references.
@@ -136,8 +138,11 @@ view code, and no theme object in the environment.
 - Brand colors live in `Assets.xcassets/Colors/` as color sets with explicit
   Any + Dark appearance variants.
 - Access everything through `Theme` (`Theme.Color`, `Theme.Spacing`, `Theme.Radius`,
-  `Theme.Font`). **No literal `Color(red:green:blue:)` and no magic numbers for padding
-  or corner radius in view code.**
+  `Theme.Font`, `Theme.Size`). **No literal `Color(red:green:blue:)` and no magic numbers for
+  padding or corner radius in view code.** `Theme.Size` holds fixed dimensions that are
+  neither spacing nor radius — editor heights, content widths — for the same reason.
+- Prefer a text style over a point size (`Theme.Font.outcomeSymbol`, not
+  `.system(size: 22)`), so type keeps tracking Dynamic Type.
 - Every screen's `#Preview` must cover both `.light` and `.dark`.
 
 ## Concurrency

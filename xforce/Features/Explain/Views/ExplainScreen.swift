@@ -74,8 +74,7 @@ private struct ExplainScreenContent: View {
                 RevealPanel(
                     diff: viewModel.diff,
                     expectedOutput: viewModel.expectedOutput,
-                    outcome: viewModel.outcome,
-                    explanation: viewModel.explanation
+                    outcome: viewModel.outcome
                 )
             }
 
@@ -195,7 +194,6 @@ private struct RevealPanel: View {
     let diff: OutputDiff?
     let expectedOutput: String?
     let outcome: PredictionOutcome?
-    let explanation: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.large) {
@@ -222,18 +220,6 @@ private struct RevealPanel: View {
                         .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
                 }
             }
-
-            VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                Text("What you said")
-                    .font(Theme.Font.sectionTitle)
-                    .foregroundStyle(Theme.Color.primaryText)
-
-                Text(explanation)
-                    .font(Theme.Font.body)
-                    .foregroundStyle(Theme.Color.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
         }
     }
 }
@@ -250,7 +236,7 @@ private struct OutcomeBanner: View {
                 .foregroundStyle(Theme.Color.primaryText)
         } icon: {
             Image(systemName: symbol)
-                .font(.system(size: Theme.Size.outcomeSymbol))
+                .font(Theme.Font.outcomeSymbol)
                 .foregroundStyle(tint)
         }
         .padding(Theme.Spacing.medium)
@@ -291,14 +277,14 @@ private struct DiffTable: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.small) {
             HStack(spacing: Theme.Spacing.medium) {
-                Color.clear.frame(width: Theme.Size.diffMarker)
+                Spacer().frame(width: Theme.Size.diffMarker)
                 columnTitle("What you predicted")
                 columnTitle("What it prints")
             }
             // Matches the rows' own padding so the three columns line up.
             .padding(.horizontal, Theme.Spacing.small)
 
-            VStack(spacing: 0) {
+            VStack(spacing: Theme.Spacing.none) {
                 ForEach(diff.lines) { line in
                     DiffRow(line: line)
                 }
@@ -330,23 +316,23 @@ private struct DiffRow: View {
             cell(line.expected)
         }
         .padding(Theme.Spacing.small)
-        .background(line.matches ? Color.clear : Theme.Color.mismatchHighlight)
+        .background {
+            if line.matches == false {
+                Theme.Color.mismatchHighlight
+            }
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
 
-    @ViewBuilder
+    /// Held in the layout even when it matches, so rows never shift width.
     private var marker: some View {
-        Group {
-            if line.matches {
-                Color.clear
-            } else {
-                Image(systemName: "xmark")
-                    .font(Theme.Font.caption)
-                    .foregroundStyle(Theme.Color.failure)
-            }
-        }
-        .frame(width: Theme.Size.diffMarker)
+        Image(systemName: "xmark")
+            .font(Theme.Font.caption)
+            .foregroundStyle(Theme.Color.failure)
+            .opacity(line.matches ? 0 : 1)
+            .frame(width: Theme.Size.diffMarker)
+            .accessibilityHidden(true)
     }
 
     private func cell(_ text: String?) -> some View {

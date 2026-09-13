@@ -80,6 +80,23 @@ struct ExplainViewModelTests {
         #expect(viewModel.outcome == nil)
     }
 
+    @Test func theRealOutputIsUnreachableBeforeTheLearnerCommits() {
+        let viewModel = makeViewModel(expectedOutput: "Optional(5)")
+        viewModel.load()
+
+        #expect(viewModel.snippet != nil)
+        #expect(viewModel.expectedOutput == nil)
+
+        viewModel.prediction = "5"
+        viewModel.explanation = "I have not submitted yet."
+
+        #expect(viewModel.expectedOutput == nil)
+
+        viewModel.submit()
+
+        #expect(viewModel.expectedOutput == "Optional(5)")
+    }
+
     @Test func theFeedbackPanelStaysLockedThroughPromptAndReveal() {
         let viewModel = makeViewModel()
         viewModel.load()
@@ -202,7 +219,7 @@ struct ExplainViewModelTests {
         #expect(lines.last?.expected == nil)
     }
 
-    @Test func theDiffKeepsTheLearnerOriginalSpacingSoTheyCanSeeWhereItBroke() {
+    @Test func theDiffPreservesInteriorSpacingSoTheLearnerCanSeeWhereItBroke() {
         let viewModel = makeViewModel(expectedOutput: "swift: 9")
         viewModel.load()
         viewModel.prediction = "swift:  9"

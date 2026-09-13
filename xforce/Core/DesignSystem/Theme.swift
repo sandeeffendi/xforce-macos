@@ -28,11 +28,15 @@ enum Theme {
         static let success = SwiftUI.Color.green
         static let failure = SwiftUI.Color.red
 
-        /// The wash behind a diff line that does not match.
-        static let mismatchHighlight = SwiftUI.Color.red.opacity(0.12)
+        /// The wash behind a diff line that does not match. An asset-catalog color set
+        /// rather than a tinted system red, so the dark appearance is authored rather than
+        /// inherited from whatever 12% of red happens to look like on a dark surface.
+        static let mismatchHighlight = SwiftUI.Color.diffMismatch
     }
 
     enum Spacing {
+        /// For stacks whose rows supply their own padding and must not be spaced apart.
+        static let none: CGFloat = 0
         static let xSmall: CGFloat = 4
         static let small: CGFloat = 8
         static let medium: CGFloat = 16
@@ -55,6 +59,10 @@ enum Theme {
         /// Monospaced, for anything that is literally console text: snippets, predictions,
         /// and the real output they are compared against.
         static let code = SwiftUI.Font.system(.body, design: .monospaced)
+
+        /// The symbol that states the outcome. A text style rather than a point size, so it
+        /// still tracks Dynamic Type.
+        static let outcomeSymbol = SwiftUI.Font.system(.title2)
     }
 
     /// Fixed dimensions that are not spacing or radius, kept here for the same reason:
@@ -63,7 +71,6 @@ enum Theme {
         static let predictionEditorHeight: CGFloat = 140
         static let explanationEditorHeight: CGFloat = 110
         static let contentMaxWidth: CGFloat = 760
-        static let outcomeSymbol: CGFloat = 22
         static let diffMarker: CGFloat = 14
     }
 }
