@@ -184,7 +184,15 @@ final class ExplainViewModel {
             return
         }
 
-        guard let concept, let snippet else { return }
+        // Unreachable while the content service refuses a snippet naming a concept that
+        // does not exist, but it still unlocks rather than returning: no path may leave the
+        // learner stranded at `reveal` with nothing to press.
+        guard let concept, let snippet else {
+            generation = .failed(FeedbackError.unavailable(availability).message)
+            advance(to: .feedback)
+            return
+        }
+
         let explanation = writtenExplanation
 
         generation = .running

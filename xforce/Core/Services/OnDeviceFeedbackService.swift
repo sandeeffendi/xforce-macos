@@ -123,7 +123,7 @@ actor OnDeviceFeedbackService: FeedbackService {
 /// and the misconception cases that join this type later are exactly the kind of closed set
 /// a schema can enforce and prose cannot.
 @Generable
-private struct GeneratedFeedback {
+private nonisolated struct GeneratedFeedback {
 
     @Guide(description: "One question that makes the learner re-examine their own reasoning. Never a correction, never the answer.")
     let socraticQuestion: String

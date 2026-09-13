@@ -75,5 +75,6 @@ enum Theme {
         static let socraticAnswerEditorHeight: CGFloat = 96
         static let inspectorMinWidth: CGFloat = 260
         static let inspectorIdealWidth: CGFloat = 320
+        static let inspectorMaxWidth: CGFloat = 420
     }
 }

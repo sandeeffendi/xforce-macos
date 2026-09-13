@@ -65,7 +65,7 @@ private struct ExplainScreenContent: View {
             .inspectorColumnWidth(
                 min: Theme.Size.inspectorMinWidth,
                 ideal: Theme.Size.inspectorIdealWidth,
-                max: Theme.Size.contentMaxWidth
+                max: Theme.Size.inspectorMaxWidth
             )
         }
     }

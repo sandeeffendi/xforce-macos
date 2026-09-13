@@ -47,9 +47,9 @@ nonisolated enum FeedbackAvailability: Hashable, Sendable {
             """
         case .modelNotReady:
             """
-            The on-device model is still downloading. The question about your reasoning \
-            arrives once it has finished — nothing is broken, and the rest of the loop is \
-            unaffected.
+            The on-device model is still downloading. Nothing is broken, and the rest of \
+            the loop is unaffected — start another session once the download has finished \
+            and you will be asked about your reasoning.
             """
         }
     }
