@@ -1,0 +1,51 @@
+# Xcode
+.DS_Store
+.xcodeproj/xcuserdata/
+.xcworkspace/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Build
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode Archives
+*.xcarchive
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Xcode User Data
+xcuserdata/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Fastlane (if used)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+
+# Local development
+*.local
