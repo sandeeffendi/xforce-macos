@@ -23,3 +23,17 @@ nonisolated enum SocraticResponse: Hashable, Sendable {
     /// The learner had nothing to add and said so.
     case skipped
 }
+
+extension SocraticResponse {
+
+    /// What the note stores. An answer keeps its text, even an empty one; a skip stores
+    /// nothing at all. `nil` in the note therefore reads as "not answered", which is the same
+    /// thing a question that was never asked leaves behind — and the stored question tells
+    /// those two apart.
+    var storedAnswer: String? {
+        switch self {
+        case .answered(let text): text
+        case .skipped: nil
+        }
+    }
+}

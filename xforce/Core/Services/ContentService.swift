@@ -83,14 +83,51 @@ final class ContentService {
         }
     }
 
-    /// The snippet the learner is shown when the practice screen opens.
-    ///
-    /// Scheduling chooses this in a later slice; until then the loop always starts at the
-    /// beginning of the authored order.
-    var firstSnippet: Snippet? { snippets.first }
-
     func concept(withID id: String) -> Concept? {
         concepts.first { $0.id == id }
+    }
+
+    /// The snippets authored for one concept, in the order they were authored.
+    func snippets(forConceptID id: String) -> [Snippet] {
+        snippets.filter { $0.conceptID == id }
+    }
+
+    /// The snippet to put in front of the learner next, given every snippet they have already
+    /// worked through and when they last saw each one.
+    ///
+    /// Deterministic, with no randomness anywhere: the same content and the same history always
+    /// choose the same snippet, so a session can be replayed and a bug reproduced.
+    ///
+    /// The concept is chosen first — the earliest one that still has a snippet the learner has
+    /// not met — and within it the lowest-difficulty unseen snippet wins. Both rules read the
+    /// authored order of the bundled content: concepts are authored so that none appears before
+    /// the concepts it depends on, and a concept's snippets are authored from least to most
+    /// difficult. That is an authoring contract rather than a stored field, which keeps the
+    /// ordering in one place instead of in two that can contradict each other.
+    ///
+    /// Once every snippet has been seen there is nothing unseen left to rank, so the one seen
+    /// longest ago comes back round.
+    func nextSnippet(seen: [String: Date]) -> Snippet? {
+        for concept in concepts {
+            if let unseen = snippets(forConceptID: concept.id).first(where: { seen[$0.id] == nil }) {
+                return unseen
+            }
+        }
+
+        return leastRecentlySeen(seen: seen)
+    }
+
+    /// Ties are broken by authored order, so the choice never depends on how the store happened
+    /// to enumerate what it holds.
+    private func leastRecentlySeen(seen: [String: Date]) -> Snippet? {
+        snippets
+            .enumerated()
+            .min { lhs, rhs in
+                let left = seen[lhs.element.id] ?? .distantPast
+                let right = seen[rhs.element.id] ?? .distantPast
+                return left == right ? lhs.offset < rhs.offset : left < right
+            }?
+            .element
     }
 
     private func adopt(_ library: ContentLibrary) {
