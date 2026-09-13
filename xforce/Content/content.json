@@ -1,12 +1,259 @@
 {
   "concepts": [
     {
+      "id": "values-and-types",
+      "name": "Values and Types",
+      "summary": "Every value in Swift has a type, decided when the value is created and fixed from then on. The type is what gives an operation its meaning, which is why dividing two whole numbers is not the same as dividing two decimals.",
+      "position": { "x": 0.46, "y": 0.07 },
+      "prerequisites": [],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "`let` binds a name to a value that cannot be reassigned and `var` binds one that can; the difference is enforced by the compiler, not a naming convention."
+        },
+        {
+          "number": 2,
+          "text": "Type inference takes a value's type from the literal it is created with, and that type never changes afterwards — a `var` cannot later hold a value of a different type."
+        },
+        {
+          "number": 3,
+          "text": "An integer literal infers `Int` and a decimal literal infers `Double`. They are separate types and do not combine in one expression without an explicit conversion such as `Double(x)`."
+        },
+        {
+          "number": 4,
+          "text": "Dividing one `Int` by another performs integer division: the result is an `Int` with the remainder discarded rather than rounded, and `%` is what recovers that remainder."
+        },
+        {
+          "number": 5,
+          "text": "A `Double` always prints with a decimal point, so a whole-number `Double` shows as `2.0`, and converting a `Double` back to `Int` truncates towards zero instead of rounding."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "division-of-ints-gives-a-decimal",
+          "name": "Dividing two integers produces a decimal",
+          "correction": "`7 / 2` between two `Int` values is `3`, not `3.5`. The result takes the type of its operands, so the fractional part is discarded. A decimal result requires converting an operand first, as in `Double(7) / 2`."
+        },
+        {
+          "id": "int-and-double-mix-freely",
+          "name": "Swift converts between Int and Double automatically",
+          "correction": "Swift performs no implicit numeric conversion. An `Int` and a `Double` cannot appear in the same arithmetic expression; one of them has to be converted explicitly, which is why `Double(count)` appears so often."
+        },
+        {
+          "id": "type-inference-means-dynamic-typing",
+          "name": "An inferred type is loose, so a variable can hold anything later",
+          "correction": "Inference only saves writing the type down; it does not make the type flexible. A `var` initialised with a number is an `Int` permanently, and assigning a string to it later is an error."
+        },
+        {
+          "id": "double-prints-without-the-decimal-point",
+          "name": "A Double holding a whole number prints like an integer",
+          "correction": "Printing a `Double` always shows the decimal point, so a `Double` holding two prints as `2.0`. Seeing `2.0` rather than `2` is how the output tells you which type you were working with."
+        },
+        {
+          "id": "converting-a-double-to-int-rounds",
+          "name": "`Int(2.9)` rounds to the nearest whole number",
+          "correction": "Converting a `Double` to `Int` truncates towards zero: `Int(2.9)` is `2` and `Int(-2.9)` is `-2`. Rounding is a separate request, made with `rounded()`."
+        }
+      ]
+    },
+    {
+      "id": "strings",
+      "name": "Strings",
+      "summary": "A string is a value made of characters. Interpolation builds a new string out of expressions, escape sequences put characters into a literal that cannot be typed, and `print` has its own rules for turning several arguments into one line.",
+      "position": { "x": 0.12, "y": 0.3 },
+      "prerequisites": [
+        "values-and-types"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "Interpolation `\\(...)` evaluates the expression inside it and inserts its textual description into a new string. It builds a string; it does not print anything by itself."
+        },
+        {
+          "number": 2,
+          "text": "`print` given several arguments joins them with a single space by default, and `separator:` replaces whatever goes between them."
+        },
+        {
+          "number": 3,
+          "text": "`print` ends its output with a newline unless `terminator:` replaces it, which is how two calls can write to the same line."
+        },
+        {
+          "number": 4,
+          "text": "An escape sequence such as `\\n` or `\\\"` is a single character in the string rather than the two characters used to write it, and `count` counts it as one."
+        },
+        {
+          "number": 5,
+          "text": "`+` on two strings produces a new string and leaves both originals untouched, and `==` compares contents exactly, including case — the `Bool` it produces prints as lowercase `true` or `false`."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "interpolation-prints-by-itself",
+          "name": "Writing `\\(value)` prints the value",
+          "correction": "Interpolation only builds a string. The string still has to be handed to `print`, assigned, or returned; on its own, `\"\\(value)\"` produces a value and displays nothing."
+        },
+        {
+          "id": "print-joins-arguments-without-a-space",
+          "name": "Comma-separated arguments to print are run together",
+          "correction": "`print(\"a\", \"b\")` writes `a b`, because the default separator is a single space. Writing `separator: \"\"` is what removes it."
+        },
+        {
+          "id": "escape-sequences-are-two-characters",
+          "name": "`\\n` in a string is a backslash followed by an n",
+          "correction": "An escape sequence is how a single character is written when it cannot be typed directly. `\"one\\ntwo\"` holds seven characters, one of which is a newline, not eight."
+        },
+        {
+          "id": "concatenation-changes-the-original-string",
+          "name": "Joining two strings with `+` modifies the one on the left",
+          "correction": "Strings are values. `a + b` produces a third string and leaves `a` and `b` exactly as they were, which is why the result has to be stored to be used."
+        },
+        {
+          "id": "string-comparison-ignores-case",
+          "name": "`==` between strings ignores capitalisation",
+          "correction": "String comparison is exact and case-sensitive, so `\"Ada\" == \"ada\"` is `false`. Comparing case-insensitively means normalising first, for example with `lowercased()`."
+        }
+      ]
+    },
+    {
+      "id": "control-flow",
+      "name": "Control Flow",
+      "summary": "Control flow decides which code runs and how often. `if` picks at most one branch, a range decides how many times a loop runs, and `switch` matches a value against patterns — each with a rule that catches out anyone arriving from another language.",
+      "position": { "x": 0.74, "y": 0.24 },
+      "prerequisites": [
+        "values-and-types"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "An `if` / `else if` / `else` chain runs at most one branch — the first whose condition is true — and stops there, even when a later condition would also have been true."
+        },
+        {
+          "number": 2,
+          "text": "A condition has to be a `Bool`. Swift has no truthiness: a non-zero number or a non-empty string is not a condition on its own."
+        },
+        {
+          "number": 3,
+          "text": "`1...3` is a closed range that includes both ends, `1..<3` excludes its upper bound, and a range whose bounds meet, such as `0..<0`, is empty, so the loop body never runs at all."
+        },
+        {
+          "number": 4,
+          "text": "`stride(from:to:by:)` stops before its `to` value and is not obliged to land on it, so the last iteration can fall short of the end rather than reaching it."
+        },
+        {
+          "number": 5,
+          "text": "A `switch` runs the first case that matches and then stops. Cases are allowed to overlap and the later one simply never runs, and control does not fall into the next case unless `fallthrough` asks for it explicitly."
+        },
+        {
+          "number": 6,
+          "text": "A `switch` must be exhaustive, so when the listed cases cannot cover every possible value a `default` case is required."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "switch-falls-through-to-the-next-case",
+          "name": "Each matching switch case continues into the next unless you write break",
+          "correction": "Swift stops at the end of the case that matched. `break` is not needed to prevent fall-through, and `fallthrough` is the opt-in keyword for the rare time the C behaviour is actually wanted."
+        },
+        {
+          "id": "half-open-range-includes-its-upper-bound",
+          "name": "`1..<3` counts 1, 2 and 3",
+          "correction": "`..<` excludes its upper bound, so `1..<3` yields 1 and 2. `1...3` is the closed form that includes 3, and the two differ by exactly one iteration."
+        },
+        {
+          "id": "non-boolean-values-are-truthy",
+          "name": "A number or a non-empty value can be used as a condition",
+          "correction": "A condition in Swift must be a `Bool`. `if count` does not compile; the comparison has to be written out, as in `if count > 0` or `if name.isEmpty == false`."
+        },
+        {
+          "id": "overlapping-switch-cases-all-run",
+          "name": "When two switch cases both match, both bodies run",
+          "correction": "Only the first matching case runs. Ordering is therefore meaningful: a broad case written above a narrow one makes the narrow one unreachable."
+        },
+        {
+          "id": "stride-always-reaches-its-end-value",
+          "name": "A stride loop always finishes on the value it was given",
+          "correction": "`stride(from:to:by:)` stops *before* `to`, and when the step does not divide the distance evenly the last value falls short. `stride(from: 0, to: 10, by: 4)` yields 0, 4 and 8 — never 10."
+        }
+      ]
+    },
+    {
+      "id": "collections",
+      "name": "Collections",
+      "summary": "An array keeps values in order and finds them by position; a dictionary keeps values under keys and finds them by key. Only one of the two has an order you can rely on, and reaching for a position that is not there is not a soft failure.",
+      "position": { "x": 0.48, "y": 0.46 },
+      "prerequisites": [
+        "control-flow"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "An array is ordered and indexed from zero, so the first element sits at index 0 and the last at `count - 1`, and printing the array whole shows its elements inside square brackets separated by a comma and a space."
+        },
+        {
+          "number": 2,
+          "text": "An index outside the array's range stops the program at runtime. It is not clamped to the ends, it does not wrap around, and it does not hand back an absent value."
+        },
+        {
+          "number": 3,
+          "text": "Removing or inserting an element shifts everything after it, so an index worked out before the change may point at a different element afterwards."
+        },
+        {
+          "number": 4,
+          "text": "A dictionary is reached by key rather than by position and has no order you can depend on, so iterating it is not guaranteed to repeat the same sequence; `keys.sorted()` is how an order is imposed when one is needed."
+        },
+        {
+          "number": 5,
+          "text": "A key that is absent has no value to hand back, which is what `dictionary[key, default:]` is for: it supplies the value to use in that case at the point of the lookup."
+        },
+        {
+          "number": 6,
+          "text": "A slice taken from an array keeps the indices the elements had in the original, so the first element of a slice is not necessarily at index 0."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "arrays-are-indexed-from-one",
+          "name": "The first element of an array is at index 1",
+          "correction": "Array indices start at zero, so the first element is `array[0]` and the last is `array[array.count - 1]`."
+        },
+        {
+          "id": "out-of-range-index-returns-nothing",
+          "name": "Reading past the end of an array gives back nothing",
+          "correction": "An out-of-range index stops the program at runtime. It does not produce an absent value to check for and it does not clamp to the last element, which is why the count is checked before the index is used."
+        },
+        {
+          "id": "dictionaries-keep-insertion-order",
+          "name": "A dictionary iterates in the order keys were added",
+          "correction": "A dictionary has no defined order at all, and two runs of the same program may enumerate it differently. Any output that has to be stable must impose an order, for example with `keys.sorted()`."
+        },
+        {
+          "id": "count-is-the-last-valid-index",
+          "name": "`count` is the index of the last element",
+          "correction": "`count` is how many elements there are, so the last valid index is `count - 1`. Using `count` itself as an index is exactly the out-of-range case."
+        },
+        {
+          "id": "a-slice-is-reindexed-from-zero",
+          "name": "A slice starts again at index 0",
+          "correction": "A slice shares the original's indices, so the first element of `array.dropFirst()` is at index 1, and `slice[0]` is out of range. Wrapping it in `Array(...)` is what renumbers it from zero."
+        }
+      ]
+    },
+    {
       "id": "optionals",
       "name": "Optionals",
       "summary": "An optional is a type that either holds a value or holds nothing at all. Swift makes that possibility part of the type, so the absence has to be dealt with before the value can be used.",
-      "position": { "x": 0.5, "y": 0.5 },
-      "prerequisites": [],
-      "related": [],
+      "position": { "x": 0.12, "y": 0.66 },
+      "prerequisites": [
+        "values-and-types",
+        "collections"
+      ],
+      "related": [
+        "strings"
+      ],
       "rubric": [
         {
           "number": 1,
@@ -51,9 +298,352 @@
           "correction": "nil means there is no value at all. An `Int?` holding 0 and an `Int?` holding nil are different things, and only one of them has a number in it."
         }
       ]
+    },
+    {
+      "id": "functions",
+      "name": "Functions",
+      "summary": "A function names a piece of work so it can be run from anywhere. Swift splits the name a caller writes from the name the body uses, lets a parameter carry a default, and hands the function a copy of every argument rather than the caller's own variable.",
+      "position": { "x": 0.86, "y": 0.46 },
+      "prerequisites": [
+        "control-flow"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "A function is declared with `func`. Declaring it runs nothing; only a call runs the body and produces the return value."
+        },
+        {
+          "number": 2,
+          "text": "A parameter can carry two names — the argument label the caller writes and the parameter name the body uses — and when only one is written it serves as both."
+        },
+        {
+          "number": 3,
+          "text": "Argument labels are part of the call, not decoration: they cannot be dropped or reordered, and `_` as the label is what lets a caller pass that argument with no label at all."
+        },
+        {
+          "number": 4,
+          "text": "A parameter with a default value may be omitted by the caller; one without a default may not, and no parameter can be skipped by position."
+        },
+        {
+          "number": 5,
+          "text": "Arguments are passed by value. The function works on its own copy, so reassigning a parameter inside the body leaves the caller's variable exactly as it was."
+        },
+        {
+          "number": 6,
+          "text": "A function can return several values at once as a tuple, and printing that tuple whole shows the element labels alongside the values rather than the values alone."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "argument-labels-are-optional-decoration",
+          "name": "Argument labels are optional and can be left out or reordered",
+          "correction": "A label is part of the call. Omitting a required label, or passing arguments in a different order from the declaration, is a compile error rather than a matter of style. Only a parameter declared with `_` may be passed without one."
+        },
+        {
+          "id": "a-function-changes-the-variable-passed-in",
+          "name": "Passing a variable to a function lets the function change it",
+          "correction": "The function receives a copy of the value, so the caller's variable is untouched. Changing it means returning a new value and assigning that back at the call site."
+        },
+        {
+          "id": "declaring-a-function-runs-it",
+          "name": "Writing a function makes its body run",
+          "correction": "A declaration only gives the body a name. Nothing inside it happens until a call, which is why a function declared but never called produces no output at all."
+        },
+        {
+          "id": "parameters-can-be-skipped-by-position",
+          "name": "Any parameter can be left out and Swift will fill in a blank",
+          "correction": "Only a parameter with a default value may be omitted. Every other parameter has to be supplied, by its label, and there is no way to leave a gap in the middle of a call."
+        },
+        {
+          "id": "a-tuple-prints-as-its-values-alone",
+          "name": "Printing a tuple shows just the values inside it",
+          "correction": "Printing a labelled tuple whole includes the labels, so a `(each: Int, left: Int)` prints as `(each: 3, left: 2)`. Printing the members individually is what produces the bare values."
+        }
+      ]
+    },
+    {
+      "id": "closures",
+      "name": "Closures",
+      "summary": "A closure is a block of code that can be stored, passed around, and run later. It also captures the variables it mentions rather than their values, which is what makes it useful and what makes it surprising.",
+      "position": { "x": 0.5, "y": 0.74 },
+      "prerequisites": [
+        "collections",
+        "functions"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "A closure is an unnamed block of code written in braces that can be stored in a variable, passed as an argument, and called like a function."
+        },
+        {
+          "number": 2,
+          "text": "Storing a closure does not run it. The body runs only when the closure is called, which may be long after the line that created it."
+        },
+        {
+          "number": 3,
+          "text": "In a short closure the arguments can be written as `$0`, `$1`, and `return` may be omitted when the body is a single expression."
+        },
+        {
+          "number": 4,
+          "text": "`map` builds a new array by transforming every element, `filter` builds one from the elements its test accepts, and `reduce` folds the whole collection into a single value — none of the three changes the original."
+        },
+        {
+          "number": 5,
+          "text": "`reduce` works through the elements in order, carrying the running result as the first argument, so an operation that is not commutative gives a different answer than folding the other way round."
+        },
+        {
+          "number": 6,
+          "text": "A closure captures the variables it refers to rather than their values at the moment it was written, so a later change to a captured variable is visible when the closure runs; a capture list such as `[counter]` is what takes a copy instead."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "map-changes-the-array-in-place",
+          "name": "`map` modifies the array it is called on",
+          "correction": "`map` returns a new array and leaves the original exactly as it was. The same is true of `filter` and `reduce`, which is why the result has to be stored or printed to be seen."
+        },
+        {
+          "id": "a-closure-runs-where-it-is-written",
+          "name": "A closure runs at the point it is defined",
+          "correction": "Creating a closure only packages the code. Nothing inside it happens until it is called, so a closure assigned to a variable and never called produces no output."
+        },
+        {
+          "id": "a-closure-captures-a-snapshot-of-the-value",
+          "name": "A closure copies the values of the variables it uses",
+          "correction": "A closure captures the variable itself, so it sees whatever the variable holds at the moment it runs, not at the moment it was written. Taking a copy is an explicit request, made with a capture list such as `[counter]`."
+        },
+        {
+          "id": "filter-keeps-the-elements-that-fail-the-test",
+          "name": "`filter` removes the elements its condition is true for",
+          "correction": "`filter` keeps the elements for which the closure returns `true` and discards the rest, so `filter { $0 % 2 == 0 }` produces the even numbers, not the odd ones."
+        },
+        {
+          "id": "reduce-order-does-not-matter",
+          "name": "The order reduce visits elements in makes no difference",
+          "correction": "`reduce` folds left to right with the running result as `$0` and the next element as `$1`. For subtraction or division that order decides the answer, and reversing it gives a different result."
+        }
+      ]
+    },
+    {
+      "id": "structs",
+      "name": "Structs",
+      "summary": "A struct groups related values into a type of your own. It is a value type: assigning it, passing it, or storing it hands over a copy, so two names never refer to the same struct.",
+      "position": { "x": 0.86, "y": 0.68 },
+      "prerequisites": [
+        "functions"
+      ],
+      "related": [],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "A struct declares stored properties, and Swift synthesises a memberwise initialiser that takes them in the order they were declared."
+        },
+        {
+          "number": 2,
+          "text": "A struct is a value type: assigning it to another variable, passing it to a function, or putting it in an array copies it, and the copy is independent from that moment on."
+        },
+        {
+          "number": 3,
+          "text": "A method that changes a stored property has to be marked `mutating`; without that keyword the method cannot alter the value it belongs to."
+        },
+        {
+          "number": 4,
+          "text": "A `mutating` method can only be called on a `var`, and a struct held in a `let` cannot have any of its properties changed, however those properties were declared."
+        },
+        {
+          "number": 5,
+          "text": "A computed property derives its value from the stored ones every time it is read, so it reflects later changes rather than the value it had at initialisation."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "assigning-a-struct-shares-it",
+          "name": "Assigning a struct makes both names refer to the same one",
+          "correction": "Assignment copies the struct. The two variables are independent from then on, so changing a property through one leaves the other exactly as it was."
+        },
+        {
+          "id": "mutating-is-only-for-clarity",
+          "name": "`mutating` is a label that documents intent and could be left off",
+          "correction": "`mutating` is required. Without it a method cannot assign to a stored property at all, and the compiler rejects the method rather than the call."
+        },
+        {
+          "id": "a-let-struct-can-still-be-changed",
+          "name": "A struct in a `let` can have its `var` properties changed",
+          "correction": "A `let` freezes the whole value. Declaring a property `var` only matters when the struct itself is held in a `var`; a struct in a `let` is immutable all the way through."
+        },
+        {
+          "id": "passing-a-struct-lets-a-function-change-it",
+          "name": "A function can modify the struct it is passed",
+          "correction": "The function receives a copy, so any change it makes is confined to that copy. Changing the caller's value means returning a new struct and assigning it back."
+        },
+        {
+          "id": "storing-a-struct-keeps-a-link-to-it",
+          "name": "A struct put into an array stays linked to the original variable",
+          "correction": "Appending a struct stores a copy of it. Changing the original variable afterwards does not touch the element in the array, and changing the element does not touch the variable."
+        }
+      ]
+    },
+    {
+      "id": "classes",
+      "name": "Classes",
+      "summary": "A class groups values and behaviour the way a struct does, but a class is a reference type: a variable holds a reference to one shared instance, so two names can point at the same object and a change made through one is visible through the other.",
+      "position": { "x": 0.86, "y": 0.92 },
+      "prerequisites": [
+        "structs"
+      ],
+      "related": [
+        "closures"
+      ],
+      "rubric": [
+        {
+          "number": 1,
+          "text": "A class is a reference type: assigning it hands over a reference to the same instance rather than a copy, so a change made through one variable is visible through every other variable referring to it."
+        },
+        {
+          "number": 2,
+          "text": "A class gets no memberwise initialiser, so an initialiser has to be written by hand whenever the stored properties have no default values."
+        },
+        {
+          "number": 3,
+          "text": "A method on a class can change stored properties without `mutating`, because it changes the instance rather than the variable that refers to it."
+        },
+        {
+          "number": 4,
+          "text": "A class instance held in a `let` can still have its `var` properties changed. The `let` fixes which instance is referred to, not what is inside that instance."
+        },
+        {
+          "number": 5,
+          "text": "`===` asks whether two references point at the same instance, which is a different question from `==` asking whether two values are equal — two separate instances with identical contents are not identical."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "assigning-a-class-copies-it",
+          "name": "Assigning a class instance makes a second, independent one",
+          "correction": "Assignment copies the reference, not the instance. Both variables then name the same object, so a change through either is visible through the other."
+        },
+        {
+          "id": "a-let-class-reference-is-fully-immutable",
+          "name": "A class instance stored in a `let` cannot be changed",
+          "correction": "The `let` only prevents pointing the variable at a different instance. The instance's own `var` properties can still be changed, which is where the contrast with a `let` struct lies."
+        },
+        {
+          "id": "classes-need-mutating-to-change-a-property",
+          "name": "A class method that changes a property must be marked `mutating`",
+          "correction": "`mutating` exists only for value types. A class method changes the shared instance directly, so the keyword is neither needed nor allowed."
+        },
+        {
+          "id": "identity-and-equality-are-the-same-question",
+          "name": "Two instances holding the same values are the same instance",
+          "correction": "`==` compares contents and `===` compares identity. Two separately created instances with identical property values are equal in contents but are not the same instance."
+        },
+        {
+          "id": "storing-a-class-in-an-array-copies-it",
+          "name": "Putting an instance into an array stores a copy of it",
+          "correction": "The array stores the reference. The element and the original variable name the same instance, so a change made through either one is visible through the other."
+        }
+      ]
     }
   ],
   "snippets": [
+    {
+      "id": "values-and-types-let-and-var",
+      "conceptID": "values-and-types",
+      "code": "let name = \"Ada\"\nvar count = 3\ncount = count + 1\n\nprint(name, count)\nprint(type(of: count))",
+      "expectedOutput": "Ada 4\nInt"
+    },
+    {
+      "id": "values-and-types-integer-division",
+      "conceptID": "values-and-types",
+      "code": "let total = 7\nlet people = 2\n\nprint(total / people)\nprint(total % people)\nprint(Double(total) / Double(people))",
+      "expectedOutput": "3\n1\n3.5"
+    },
+    {
+      "id": "values-and-types-double-printing",
+      "conceptID": "values-and-types",
+      "code": "let price = 2.0\nlet quantity = 3\n\nprint(price)\nprint(price * Double(quantity))\nprint(1 / 2)\nprint(1.0 / 2)",
+      "expectedOutput": "2.0\n6.0\n0\n0.5"
+    },
+    {
+      "id": "values-and-types-conversion-order",
+      "conceptID": "values-and-types",
+      "code": "let ratio = 7 / 2\nlet exact = Double(7) / 2\n\nprint(ratio)\nprint(exact)\nprint(Double(7 / 2))\nprint(Int(2.9))\nprint(Int(-2.9))",
+      "expectedOutput": "3\n3.5\n3.0\n2\n-2"
+    },
+    {
+      "id": "strings-interpolation",
+      "conceptID": "strings",
+      "code": "let name = \"Ada\"\nlet age = 36\n\nprint(\"\\(name) is \\(age)\")\nprint(\"\\(name) is \\(age + 1) next year\")\nprint(\"2 + 3 = \\(2 + 3)\")",
+      "expectedOutput": "Ada is 36\nAda is 37 next year\n2 + 3 = 5"
+    },
+    {
+      "id": "strings-separator-and-terminator",
+      "conceptID": "strings",
+      "code": "print(\"a\", \"b\", \"c\")\nprint(\"a\", \"b\", \"c\", separator: \"\")\nprint(1, 2, separator: \" and \", terminator: \"!\\n\")\nprint(\"x\", terminator: \"\")\nprint(\"y\")",
+      "expectedOutput": "a b c\nabc\n1 and 2!\nxy"
+    },
+    {
+      "id": "strings-escapes-and-count",
+      "conceptID": "strings",
+      "code": "let quoted = \"She said \\\"hi\\\"\"\n\nprint(quoted)\nprint(quoted.count)\nprint(\"3\" + \"4\")\nprint(\"one\\ntwo\".count)",
+      "expectedOutput": "She said \"hi\"\n13\n34\n7"
+    },
+    {
+      "id": "strings-concatenation-and-comparison",
+      "conceptID": "strings",
+      "code": "let first = \"Ada\"\nlet last = \"Lovelace\"\nlet full = first + \" \" + last\n\nprint(full)\nprint(first.count, full.count)\nprint(first == \"ada\")\nprint(first.uppercased() == \"ADA\")\nprint(full.hasPrefix(\"Ada\"))",
+      "expectedOutput": "Ada Lovelace\n3 12\nfalse\ntrue\ntrue"
+    },
+    {
+      "id": "control-flow-first-branch-wins",
+      "conceptID": "control-flow",
+      "code": "let candidates = [4, 9, 12]\nlet n = candidates[2]\n\nif n % 2 == 0 {\n    print(\"even\")\n} else if n % 3 == 0 {\n    print(\"multiple of three\")\n}\n\nif n % 3 == 0 {\n    print(\"also a multiple of three\")\n}",
+      "expectedOutput": "even\nalso a multiple of three"
+    },
+    {
+      "id": "control-flow-range-boundaries",
+      "conceptID": "control-flow",
+      "code": "for i in 1...3 {\n    print(\"closed \\(i)\")\n}\n\nfor i in 1..<3 {\n    print(\"half-open \\(i)\")\n}\n\nfor i in 0..<0 {\n    print(\"empty \\(i)\")\n}\n\nprint(\"done\")",
+      "expectedOutput": "closed 1\nclosed 2\nclosed 3\nhalf-open 1\nhalf-open 2\ndone"
+    },
+    {
+      "id": "control-flow-switch-matching",
+      "conceptID": "control-flow",
+      "code": "let score = 5\n\nswitch score {\ncase 0...5:\n    print(\"low\")\ncase 5...10:\n    print(\"high\")\ndefault:\n    print(\"off the scale\")\n}\n\nswitch score {\ncase 5:\n    print(\"five\")\n    fallthrough\ncase 6:\n    print(\"six\")\ndefault:\n    print(\"other\")\n}",
+      "expectedOutput": "low\nfive\nsix"
+    },
+    {
+      "id": "control-flow-stride-and-truncation",
+      "conceptID": "control-flow",
+      "code": "for i in stride(from: 0, to: 10, by: 4) {\n    print(i)\n}\n\nvar total = 0\nfor i in 1...5 {\n    total += i / 2\n}\n\nprint(total)",
+      "expectedOutput": "0\n4\n8\n6"
+    },
+    {
+      "id": "collections-array-basics",
+      "conceptID": "collections",
+      "code": "let names = [\"Ada\", \"Bo\", \"Cy\"]\n\nprint(names[0])\nprint(names.count)\nprint(names[names.count - 1])\nprint(names.isEmpty)",
+      "expectedOutput": "Ada\n3\nCy\nfalse"
+    },
+    {
+      "id": "collections-dictionary-lookup",
+      "conceptID": "collections",
+      "code": "var scores = [\"swift\": 9]\nscores[\"rust\"] = 7\nscores[\"swift\"] = 10\n\nprint(scores[\"swift\", default: 0])\nprint(scores[\"go\", default: 0])\nprint(scores.count)",
+      "expectedOutput": "10\n0\n2"
+    },
+    {
+      "id": "collections-mutation-shifts-indices",
+      "conceptID": "collections",
+      "code": "var queue = [10, 20, 30]\nqueue.append(40)\nqueue.remove(at: 0)\n\nprint(queue)\nprint(queue[0])\nprint(queue.count)",
+      "expectedOutput": "[20, 30, 40]\n20\n3"
+    },
+    {
+      "id": "collections-slice-indices",
+      "conceptID": "collections",
+      "code": "let numbers = [10, 20, 30, 40]\nlet tail = numbers.dropFirst()\n\nprint(tail)\nprint(tail[1])\nprint(Array(tail)[1])\n\nlet stock = [\"pen\": 4, \"ink\": 0]\nfor key in stock.keys.sorted() {\n    print(key, stock[key, default: -1])\n}",
+      "expectedOutput": "[20, 30, 40]\n20\n30\nink 0\npen 4"
+    },
     {
       "id": "optionals-print-wrapped",
       "conceptID": "optionals",
@@ -77,6 +667,102 @@
       "conceptID": "optionals",
       "code": "let raw = \"42\"\nlet parsed = Int(raw)\nprint(parsed == nil)\nprint(parsed!)",
       "expectedOutput": "false\n42"
+    },
+    {
+      "id": "functions-labels-and-order",
+      "conceptID": "functions",
+      "code": "func power(of base: Int, by exponent: Int) -> Int {\n    var result = 1\n    for _ in 1...exponent {\n        result = result * base\n    }\n    return result\n}\n\nprint(power(of: 2, by: 3))\nprint(power(of: 3, by: 2))",
+      "expectedOutput": "8\n9"
+    },
+    {
+      "id": "functions-defaults-and-underscore",
+      "conceptID": "functions",
+      "code": "func line(_ text: String, times: Int = 2, separator: String = \"-\") -> String {\n    var parts: [String] = []\n    for _ in 1...times {\n        parts.append(text)\n    }\n    return parts.joined(separator: separator)\n}\n\nprint(line(\"ab\"))\nprint(line(\"ab\", times: 3))\nprint(line(\"ab\", separator: \"+\"))",
+      "expectedOutput": "ab-ab\nab-ab-ab\nab+ab"
+    },
+    {
+      "id": "functions-arguments-are-copies",
+      "conceptID": "functions",
+      "code": "func doubled(_ n: Int) -> Int {\n    var n = n\n    n = n * 2\n    return n\n}\n\nvar value = 5\n\nprint(doubled(value))\nprint(value)\nprint(doubled(doubled(value)))",
+      "expectedOutput": "10\n5\n20"
+    },
+    {
+      "id": "functions-tuple-return",
+      "conceptID": "functions",
+      "code": "func split(_ total: Int, among people: Int) -> (each: Int, left: Int) {\n    return (total / people, total % people)\n}\n\nlet share = split(17, among: 5)\n\nprint(share)\nprint(share.each, share.left)\n\nfunc firstEven(in numbers: [Int]) -> Int? {\n    for n in numbers where n % 2 == 0 {\n        return n\n    }\n    return nil\n}\n\nprint(firstEven(in: [1, 3, 4, 5]) ?? -1)\nprint(firstEven(in: [1, 3, 5]) ?? -1)",
+      "expectedOutput": "(each: 3, left: 2)\n3 2\n4\n-1"
+    },
+    {
+      "id": "closures-map-and-filter",
+      "conceptID": "closures",
+      "code": "let numbers = [1, 2, 3, 4]\nlet doubled = numbers.map { $0 * 2 }\n\nprint(doubled)\nprint(numbers)\nprint(numbers.filter { $0 % 2 == 0 })",
+      "expectedOutput": "[2, 4, 6, 8]\n[1, 2, 3, 4]\n[2, 4]"
+    },
+    {
+      "id": "closures-reduce-order",
+      "conceptID": "closures",
+      "code": "let numbers = [1, 2, 3, 4, 5]\n\nprint(numbers.reduce(0) { $0 + $1 })\nprint(numbers.reduce(1) { $0 * $1 })\nprint(numbers.reduce(100) { $0 - $1 })\nprint(numbers.map { $0 * $0 }.filter { $0 > 5 })",
+      "expectedOutput": "15\n120\n85\n[9, 16, 25]"
+    },
+    {
+      "id": "closures-stored-and-called-later",
+      "conceptID": "closures",
+      "code": "var log: [String] = []\n\nlet record = { (message: String) in\n    log.append(message)\n}\n\nprint(log.count)\n\nrecord(\"first\")\nrecord(\"second\")\n\nprint(log.count)\nprint(log[0])",
+      "expectedOutput": "0\n2\nfirst"
+    },
+    {
+      "id": "closures-capture-list",
+      "conceptID": "closures",
+      "code": "var counter = 0\n\nlet shared = { print(\"shared \\(counter)\") }\nlet snapshot = { [counter] in print(\"snapshot \\(counter)\") }\n\ncounter = 10\n\nshared()\nsnapshot()\nprint(counter)",
+      "expectedOutput": "shared 10\nsnapshot 0\n10"
+    },
+    {
+      "id": "structs-assignment-copies",
+      "conceptID": "structs",
+      "code": "struct Point {\n    var x: Int\n    var y: Int\n}\n\nvar a = Point(x: 1, y: 2)\nvar b = a\nb.x = 99\n\nprint(a.x, a.y)\nprint(b.x, b.y)",
+      "expectedOutput": "1 2\n99 2"
+    },
+    {
+      "id": "structs-mutating-method",
+      "conceptID": "structs",
+      "code": "struct Counter {\n    var value = 0\n\n    mutating func bump() {\n        value += 1\n    }\n}\n\nvar counter = Counter()\ncounter.bump()\ncounter.bump()\n\nprint(counter.value)",
+      "expectedOutput": "2"
+    },
+    {
+      "id": "structs-computed-property",
+      "conceptID": "structs",
+      "code": "struct Rectangle {\n    var width: Int\n    var height: Int\n\n    var area: Int {\n        width * height\n    }\n}\n\nvar box = Rectangle(width: 3, height: 4)\nprint(box.area)\n\nbox.width = 5\nprint(box.area)",
+      "expectedOutput": "12\n20"
+    },
+    {
+      "id": "structs-copies-everywhere",
+      "conceptID": "structs",
+      "code": "struct Tally {\n    var count = 0\n}\n\nfunc bumped(_ tally: Tally) -> Tally {\n    var copy = tally\n    copy.count += 1\n    return copy\n}\n\nvar original = Tally()\nlet result = bumped(original)\nprint(original.count, result.count)\n\nvar list = [original]\noriginal.count = 42\nprint(list[0].count, original.count)",
+      "expectedOutput": "0 1\n0 42"
+    },
+    {
+      "id": "classes-assignment-shares",
+      "conceptID": "classes",
+      "code": "class Point {\n    var x: Int\n    var y: Int\n\n    init(x: Int, y: Int) {\n        self.x = x\n        self.y = y\n    }\n}\n\nlet a = Point(x: 1, y: 2)\nlet b = a\nb.x = 99\n\nprint(a.x, a.y)\nprint(b.x, b.y)",
+      "expectedOutput": "99 2\n99 2"
+    },
+    {
+      "id": "classes-mutation-without-mutating",
+      "conceptID": "classes",
+      "code": "class Counter {\n    var value = 0\n\n    func bump() {\n        value += 1\n    }\n}\n\nlet counter = Counter()\ncounter.bump()\ncounter.bump()\n\nprint(counter.value)",
+      "expectedOutput": "2"
+    },
+    {
+      "id": "classes-identity-versus-equality",
+      "conceptID": "classes",
+      "code": "class Tag {\n    var name: String\n\n    init(name: String) {\n        self.name = name\n    }\n}\n\nlet first = Tag(name: \"swift\")\nlet second = Tag(name: \"swift\")\nlet alias = first\n\nprint(first === second)\nprint(first === alias)\nprint(first.name == second.name)",
+      "expectedOutput": "false\ntrue\ntrue"
+    },
+    {
+      "id": "classes-shared-through-a-function",
+      "conceptID": "classes",
+      "code": "class Basket {\n    var count = 0\n}\n\nfunc fill(_ basket: Basket) {\n    basket.count = 10\n}\n\nlet basket = Basket()\nlet shelf = [basket]\nfill(basket)\n\nprint(basket.count)\nprint(shelf[0].count)",
+      "expectedOutput": "10\n10"
     }
   ]
 }

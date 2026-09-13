@@ -31,10 +31,74 @@ import FoundationModels
 @Generable
 nonisolated enum MisconceptionID: String, CaseIterable, Hashable, Sendable {
 
+    // MARK: Values and Types
+
+    case divisionOfIntsGivesADecimal = "division-of-ints-gives-a-decimal"
+    case intAndDoubleMixFreely = "int-and-double-mix-freely"
+    case typeInferenceMeansDynamicTyping = "type-inference-means-dynamic-typing"
+    case doublePrintsWithoutTheDecimalPoint = "double-prints-without-the-decimal-point"
+    case convertingADoubleToIntRounds = "converting-a-double-to-int-rounds"
+
+    // MARK: Strings
+
+    case interpolationPrintsByItself = "interpolation-prints-by-itself"
+    case printJoinsArgumentsWithoutASpace = "print-joins-arguments-without-a-space"
+    case escapeSequencesAreTwoCharacters = "escape-sequences-are-two-characters"
+    case concatenationChangesTheOriginalString = "concatenation-changes-the-original-string"
+    case stringComparisonIgnoresCase = "string-comparison-ignores-case"
+
+    // MARK: Control Flow
+
+    case switchFallsThroughToTheNextCase = "switch-falls-through-to-the-next-case"
+    case halfOpenRangeIncludesItsUpperBound = "half-open-range-includes-its-upper-bound"
+    case nonBooleanValuesAreTruthy = "non-boolean-values-are-truthy"
+    case overlappingSwitchCasesAllRun = "overlapping-switch-cases-all-run"
+    case strideAlwaysReachesItsEndValue = "stride-always-reaches-its-end-value"
+
+    // MARK: Collections
+
+    case arraysAreIndexedFromOne = "arrays-are-indexed-from-one"
+    case outOfRangeIndexReturnsNothing = "out-of-range-index-returns-nothing"
+    case dictionariesKeepInsertionOrder = "dictionaries-keep-insertion-order"
+    case countIsTheLastValidIndex = "count-is-the-last-valid-index"
+    case aSliceIsReindexedFromZero = "a-slice-is-reindexed-from-zero"
+
     // MARK: Optionals
 
     case optionalIsTheSameAsTheValue = "optional-is-the-same-as-the-value"
     case printingShowsTheValue = "printing-shows-the-value"
     case nilCoalescingUnwrapsPermanently = "nil-coalescing-unwraps-permanently"
     case nilIsZeroOrEmpty = "nil-is-zero-or-empty"
+
+    // MARK: Functions
+
+    case argumentLabelsAreOptionalDecoration = "argument-labels-are-optional-decoration"
+    case aFunctionChangesTheVariablePassedIn = "a-function-changes-the-variable-passed-in"
+    case declaringAFunctionRunsIt = "declaring-a-function-runs-it"
+    case parametersCanBeSkippedByPosition = "parameters-can-be-skipped-by-position"
+    case aTuplePrintsAsItsValuesAlone = "a-tuple-prints-as-its-values-alone"
+
+    // MARK: Closures
+
+    case mapChangesTheArrayInPlace = "map-changes-the-array-in-place"
+    case aClosureRunsWhereItIsWritten = "a-closure-runs-where-it-is-written"
+    case aClosureCapturesASnapshotOfTheValue = "a-closure-captures-a-snapshot-of-the-value"
+    case filterKeepsTheElementsThatFailTheTest = "filter-keeps-the-elements-that-fail-the-test"
+    case reduceOrderDoesNotMatter = "reduce-order-does-not-matter"
+
+    // MARK: Structs
+
+    case assigningAStructSharesIt = "assigning-a-struct-shares-it"
+    case mutatingIsOnlyForClarity = "mutating-is-only-for-clarity"
+    case aLetStructCanStillBeChanged = "a-let-struct-can-still-be-changed"
+    case passingAStructLetsAFunctionChangeIt = "passing-a-struct-lets-a-function-change-it"
+    case storingAStructKeepsALinkToIt = "storing-a-struct-keeps-a-link-to-it"
+
+    // MARK: Classes
+
+    case assigningAClassCopiesIt = "assigning-a-class-copies-it"
+    case aLetClassReferenceIsFullyImmutable = "a-let-class-reference-is-fully-immutable"
+    case classesNeedMutatingToChangeAProperty = "classes-need-mutating-to-change-a-property"
+    case identityAndEqualityAreTheSameQuestion = "identity-and-equality-are-the-same-question"
+    case storingAClassInAnArrayCopiesIt = "storing-a-class-in-an-array-copies-it"
 }
