@@ -63,7 +63,6 @@ private struct GraphScreenContent: View {
 
 #Preview("Light") {
     GraphScreen()
-        .environment(Router())
         .environment(ContentService())
         .environment(SchedulingService.inMemory())
         .preferredColorScheme(.light)
@@ -71,7 +70,6 @@ private struct GraphScreenContent: View {
 
 #Preview("Dark") {
     GraphScreen()
-        .environment(Router())
         .environment(ContentService())
         .environment(SchedulingService.inMemory())
         .preferredColorScheme(.dark)

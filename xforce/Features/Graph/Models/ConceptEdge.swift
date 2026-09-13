@@ -10,7 +10,7 @@ import Foundation
 /// Edges come from the ontology's own authored `prerequisites` and `related` fields and from
 /// nothing else. No embeddings and no similarity: the ontology already carries correct edges,
 /// and a model choosing among a handful of concepts would add noise rather than signal.
-nonisolated struct ConceptEdge: Identifiable, Hashable, Sendable {
+nonisolated struct ConceptEdge: Hashable, Sendable {
 
     /// What kind of relationship the line stands for.
     enum Kind: Hashable, Sendable {
@@ -25,10 +25,6 @@ nonisolated struct ConceptEdge: Identifiable, Hashable, Sendable {
     let from: String
     let to: String
     let kind: Kind
-
-    /// One line per pair of concepts, so the pair is the identity. A pair authored as both a
-    /// prerequisite and a relationship is one edge, not two.
-    var id: String { "\(from)-\(to)" }
 }
 
 extension ConceptEdge {

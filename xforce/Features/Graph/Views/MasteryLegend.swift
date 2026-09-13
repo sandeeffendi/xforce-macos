@@ -14,9 +14,19 @@ struct MasteryLegend: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-            HStack(spacing: Theme.Spacing.large) {
-                ForEach(MasteryLevel.allCases, id: \.self) { level in
-                    swatch(for: level)
+            // The legend is what the colours mean, so it must never be the thing that gets
+            // truncated. At a large text size the four levels stack instead of shrinking.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Theme.Spacing.large) {
+                    ForEach(MasteryLevel.allCases, id: \.self) { level in
+                        swatch(for: level)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+                    ForEach(MasteryLevel.allCases, id: \.self) { level in
+                        swatch(for: level)
+                    }
                 }
             }
 

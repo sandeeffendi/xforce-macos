@@ -16,41 +16,58 @@ struct ConceptGraphView: View {
     let nodes: [ConceptNode]
     let edges: [ConceptEdge]
 
+    /// The mark and its name grow with the learner's text size, and the inset that keeps an
+    /// edge-of-the-square node on screen has to grow with them.
+    @ScaledMetric(relativeTo: .caption) private var nodeDiameter = Theme.Size.graphNodeDiameter
+    @ScaledMetric(relativeTo: .caption) private var labelWidth = Theme.Size.graphNodeLabelWidth
+
     var body: some View {
         GeometryReader { proxy in
-            let layout = GraphLayout(size: proxy.size)
+            let layout = GraphLayout(
+                size: proxy.size,
+                horizontalInset: labelWidth / 2 + Theme.Spacing.small,
+                verticalInset: nodeDiameter / 2 + Theme.Spacing.xLarge
+            )
 
             ZStack {
-                ConceptEdgeCanvas(nodes: nodes, edges: edges, layout: layout)
+                ConceptEdgeCanvas(edges: edges, points: layout.points(for: nodes))
 
                 ForEach(nodes) { node in
-                    ConceptNodeView(node: node)
+                    ConceptNodeView(node: node, diameter: nodeDiameter, labelWidth: labelWidth)
                         .position(layout.point(for: node.position))
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .frame(minHeight: Theme.Size.graphCanvasMinHeight)
         .padding(Theme.Spacing.medium)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("Concept graph")
     }
 }
 
 /// Turns an authored unit position into a point inside the space the graph was given.
 ///
-/// The inset is half a node plus a gap, so a concept authored at the very edge of the unit
-/// square is still drawn whole, name and all.
+/// The insets are what keep a concept authored at the very edge of the unit square fully on
+/// screen: half a mark plus a gap vertically, half a name horizontally, because the name is
+/// centred under the mark and is the wider of the two.
 private struct GraphLayout {
 
     let size: CGSize
-
-    private var inset: CGFloat { Theme.Size.graphNodeDiameter / 2 + Theme.Spacing.xLarge }
+    let horizontalInset: CGFloat
+    let verticalInset: CGFloat
 
     func point(for position: ConceptPosition) -> CGPoint {
         CGPoint(
-            x: inset + position.x * max(size.width - inset * 2, 0),
-            y: inset + position.y * max(size.height - inset * 2, 0)
+            x: horizontalInset + position.x * max(size.width - horizontalInset * 2, 0),
+            y: verticalInset + position.y * max(size.height - verticalInset * 2, 0)
         )
+    }
+
+    /// Every node's point, keyed by concept id, so the edges can find both of their ends.
+    func points(for nodes: [ConceptNode]) -> [String: CGPoint] {
+        nodes.reduce(into: [:]) { points, node in
+            points[node.id] = point(for: node.position)
+        }
     }
 }
 
@@ -60,17 +77,11 @@ private struct GraphLayout {
 /// told apart by shape rather than by colour alone.
 private struct ConceptEdgeCanvas: View {
 
-    let nodes: [ConceptNode]
     let edges: [ConceptEdge]
-    let layout: GraphLayout
+    let points: [String: CGPoint]
 
     var body: some View {
         Canvas { context, _ in
-            let points = Dictionary(
-                nodes.map { ($0.id, layout.point(for: $0.position)) },
-                uniquingKeysWith: { first, _ in first }
-            )
-
             for edge in edges {
                 guard let start = points[edge.from], let end = points[edge.to] else { continue }
 
@@ -78,7 +89,7 @@ private struct ConceptEdgeCanvas: View {
                 path.move(to: start)
                 path.addLine(to: end)
 
-                context.stroke(path, with: .color(Theme.Color.separator), style: strokeStyle(for: edge.kind))
+                context.stroke(path, with: .color(Theme.Color.graphEdge), style: strokeStyle(for: edge.kind))
             }
         }
         // The relationships are drawn for the eye. What each concept is and how well it is
@@ -100,16 +111,18 @@ private struct ConceptEdgeCanvas: View {
 private struct ConceptNodeView: View {
 
     let node: ConceptNode
+    let diameter: CGFloat
+    let labelWidth: CGFloat
 
     var body: some View {
         VStack(spacing: Theme.Spacing.xSmall) {
-            MasteryDot(level: node.mastery, diameter: Theme.Size.graphNodeDiameter)
+            MasteryDot(level: node.mastery, diameter: diameter)
 
             Text(node.name)
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.secondaryText)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: Theme.Size.graphNodeLabelWidth)
+                .frame(maxWidth: labelWidth)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(node.name), \(node.mastery.title)")
