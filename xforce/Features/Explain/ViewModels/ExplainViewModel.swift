@@ -132,16 +132,7 @@ final class ExplainViewModel {
     var connectedConcepts: [Concept] {
         guard phase.isFeedbackUnlocked, let concept else { return [] }
 
-        // Each id once, never the concept itself, and only ids the ontology can resolve. An
-        // unresolvable id already fails the content integrity suite, so dropping it here is
-        // about never rendering a blank row rather than about tolerating bad content.
-        var seen: Set<String> = [concept.id]
-
-        return (concept.prerequisites + concept.related).compactMap { id in
-            guard seen.contains(id) == false else { return nil }
-            seen.insert(id)
-            return content.concept(withID: id)
-        }
+        return content.neighbours(of: concept)
     }
 
     /// Whether the model is working, so a pause does not read as a freeze.

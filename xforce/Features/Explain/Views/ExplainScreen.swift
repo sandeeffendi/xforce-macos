@@ -338,9 +338,8 @@ private struct OutcomeBanner: View {
                 .font(Theme.Font.sectionTitle)
                 .foregroundStyle(Theme.Color.primaryText)
         } icon: {
-            Image(systemName: symbol)
+            OutcomeSymbol(outcome: outcome)
                 .font(Theme.Font.outcomeSymbol)
-                .foregroundStyle(tint)
         }
         .padding(Theme.Spacing.medium)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -356,6 +355,20 @@ private struct OutcomeBanner: View {
         case .correct: "You predicted the output correctly."
         case .incorrect: "That is not what this prints."
         }
+    }
+}
+
+/// The tick or the cross, wherever the outcome is stated.
+///
+/// One view rather than a symbol-and-tint pair repeated at each site, so the reveal and the
+/// feedback panel cannot end up disagreeing about what "correct" looks like. The size is left
+/// to the caller, which is the only thing that genuinely differs between them.
+private struct OutcomeSymbol: View {
+    let outcome: PredictionOutcome
+
+    var body: some View {
+        Image(systemName: symbol)
+            .foregroundStyle(tint)
     }
 
     private var symbol: String {
@@ -516,6 +529,9 @@ private struct SocraticQuestionCard: View {
                 .foregroundStyle(Theme.Color.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        // One question is one thing to hear, attribution included. The panel's card is not
+        // combined, because its lists have to be navigable point by point.
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -683,7 +699,7 @@ private struct FeedbackPanel: View {
     @ViewBuilder
     private var modelReading: some View {
         if let feedback {
-            ModelWrittenCard(title: "Read by the on-device model") {
+            ModelWrittenCard(title: modelReadingTitle) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
                     RubricList(
                         title: "What you got right",
@@ -707,8 +723,11 @@ private struct FeedbackPanel: View {
                 }
             }
         } else if let noReadingExplanation {
-            // Not marked as the model's words, because there are none: nothing was written.
-            FeedbackSection(title: "What you got right") {
+            // The same slot, under the same heading, so the running order still holds when
+            // there was no model. Not marked as the model's words, because there are none —
+            // and not filed under "what you got right", which would put an explanation of the
+            // model's absence under a heading claiming to list the learner's hits.
+            FeedbackSection(title: modelReadingTitle) {
                 Text(noReadingExplanation)
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.Color.secondaryText)
@@ -716,6 +735,10 @@ private struct FeedbackPanel: View {
             }
         }
     }
+
+    /// Named once, so the slot keeps the same heading whether the model read the explanation
+    /// or could not be reached.
+    private var modelReadingTitle: String { "Read by the on-device model" }
 }
 
 /// One heading and its contents. The panel's sections are all this shape, which is what keeps
@@ -755,8 +778,7 @@ private struct OutputComparison: View {
                     .foregroundStyle(Theme.Color.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
-                Image(systemName: symbol)
-                    .foregroundStyle(tint)
+                OutcomeSymbol(outcome: outcome)
             }
 
             quoted("What you predicted", prediction)
@@ -786,20 +808,6 @@ private struct OutputComparison: View {
         switch outcome {
         case .correct: "Your prediction matched."
         case .incorrect: "Your prediction did not match."
-        }
-    }
-
-    private var symbol: String {
-        switch outcome {
-        case .correct: "checkmark.circle.fill"
-        case .incorrect: "xmark.circle.fill"
-        }
-    }
-
-    private var tint: Color {
-        switch outcome {
-        case .correct: Theme.Color.success
-        case .incorrect: Theme.Color.failure
         }
     }
 }

@@ -21,9 +21,6 @@ final class FakeFeedbackService: FeedbackService {
     /// What the one inference does when it is asked for.
     enum Behaviour: Sendable {
 
-        /// Returns this question, with nothing judged about the explanation.
-        case answers(String)
-
         /// Returns this whole inference: the question, the rubric numbers the model claims to
         /// have found, and the misconceptions it claims to have detected.
         case returns(ExplanationFeedback)
@@ -33,6 +30,13 @@ final class FakeFeedbackService: FeedbackService {
 
         /// Never returns on its own. Only cancellation ends it.
         case hangs
+
+        /// Returns this question and judges nothing, for the suites that only care about the
+        /// gate. A spelling of ``returns(_:)`` rather than a case of its own, because a second
+        /// case holding strictly less would be the same behaviour written twice.
+        static func answers(_ question: String) -> Behaviour {
+            .returns(ExplanationFeedback(socraticQuestion: question))
+        }
     }
 
     /// What the service was asked to do, so a test can assert on the call itself rather
@@ -80,9 +84,6 @@ final class FakeFeedbackService: FeedbackService {
         }
 
         switch behaviour {
-        case .answers(let question):
-            return ExplanationFeedback(socraticQuestion: question)
-
         case .returns(let feedback):
             return feedback
 

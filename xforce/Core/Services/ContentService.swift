@@ -92,6 +92,27 @@ final class ContentService {
         snippets.filter { $0.conceptID == id }
     }
 
+    /// The concepts one concept connects to: its authored prerequisites followed by its
+    /// authored related edges.
+    ///
+    /// Resolving the edges belongs here, with the ontology, rather than in whatever happens to
+    /// want them — the ids mean nothing without the concepts they point at, and this is the
+    /// only type that holds those.
+    ///
+    /// Each id appears once, the concept is never its own neighbour, and an id that resolves to
+    /// nothing is dropped. The content integrity suite already fails the build on an
+    /// unresolvable id, so that last rule is about never rendering a blank row rather than
+    /// about tolerating broken content.
+    func neighbours(of concept: Concept) -> [Concept] {
+        var seen: Set<String> = [concept.id]
+
+        return (concept.prerequisites + concept.related).compactMap { id in
+            guard seen.contains(id) == false else { return nil }
+            seen.insert(id)
+            return self.concept(withID: id)
+        }
+    }
+
     /// The snippet to put in front of the learner next, given every snippet they have already
     /// worked through and when they last saw each one.
     ///
