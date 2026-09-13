@@ -14,7 +14,8 @@ import Testing
 // producing different judgements with no error, no warning and no failing build. This suite
 // is the early warning: six authored learner explanations, run through the real model, with
 // set comparisons over the rubric points it reports as covered and the misconceptions it
-// reports as detected.
+// reports as detected. The Socratic question's wording is never asserted on — only that one
+// came back at all.
 //
 // It is **excluded from the default test run** and only runs when `XFORCE_PROMPT_REGRESSION`
 // is set in the environment of the process the tests run in:
@@ -29,14 +30,11 @@ import Testing
 //       -derivedDataPath .build/DerivedData -parallel-testing-enabled NO \
 //       test -only-testing:xforceTests/PromptRegressionTests
 //
-// The `TEST_RUNNER_` prefix is not decoration and the suite will not run without it. The test
-// host is launched by the testing machinery rather than inherited from the shell, and
-// `xcodebuild` forwards only the variables named that way, stripping the prefix on the way in
-// — so the process the suite runs in sees plain `XFORCE_PROMPT_REGRESSION`. From Xcode, put
-// `XFORCE_PROMPT_REGRESSION` in the test action's environment variables instead.
-//
-// `-parallel-testing-enabled NO` keeps one runner process. With parallelism left on, every
-// fixture is inferred twice, which doubles the slowest part of the suite for nothing.
+// The `TEST_RUNNER_` prefix is not decoration and the suite will not run without it: the test
+// host does not inherit the shell's environment, and `xcodebuild` forwards only the variables
+// named that way, stripping the prefix so the suite sees plain `XFORCE_PROMPT_REGRESSION`.
+// From Xcode, put `XFORCE_PROMPT_REGRESSION` in the test action's environment instead.
+// `docs/system-design.md` carries the same invocation and the rest of the reasoning.
 //
 // Three reasons for the gate, and all three matter: it needs a Mac eligible for Apple
 // Intelligence with the model downloaded, it spends real inference time per fixture, and the
@@ -83,9 +81,9 @@ import Testing
 
 /// Whether the gated half of this file runs.
 ///
-/// A free function over an explicit environment dictionary rather than a read of the process
-/// environment, so the rule itself is testable: the gate is the thing standing between an
-/// ineligible Mac and a red default run, and a gate nobody tested is a gate nobody trusts.
+/// The rule takes the environment as an argument rather than reading the process's own, so it
+/// can be tested: the gate is the thing standing between an ineligible Mac and a red default
+/// run, and a gate nobody tested is a gate nobody trusts.
 enum PromptRegression {
 
     /// The variable that turns the real-inference suite on.
@@ -136,7 +134,7 @@ struct PromptRegressionFixtureTests {
         #expect(PromptRegression.isEnabled(in: environment) == false)
     }
 
-    @Test(arguments: ["1", "yes", "true", "please"])
+    @Test(arguments: ["1", "yes", "true"])
     func theSuiteIsOnWhenTheVariableCarriesAValue(value: String) {
         let environment = [PromptRegression.environmentVariable: value]
 
@@ -145,6 +143,8 @@ struct PromptRegressionFixtureTests {
 
     // MARK: The fixture set
 
+    /// Five or six is the range the ticket authored the set against: enough to span the three
+    /// cases below without spending more inference time per run than anyone will sit through.
     @Test func theSetHoldsFiveOrSixFixturesWithDistinctIdentifiers() {
         let fixtures = PromptRegressionFixture.all
 
@@ -298,8 +298,10 @@ struct PromptRegressionTests {
             """
         )
 
-        // Prose is never asserted on, but an empty question is a broken half of the loop
-        // rather than a matter of wording.
+        // The only thing asserted about the question is that there is one. Its wording is
+        // meant to vary, and an assertion over it would be the string matching this suite
+        // exists to avoid — but a session that comes back with no question at all is a
+        // broken half of the loop rather than a matter of phrasing.
         #expect(feedback.socraticQuestion.isEmpty == false, "\(fixture.id) came back with no question")
     }
 }

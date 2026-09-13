@@ -85,7 +85,7 @@ rubric point numbers it reports as covered and the misconception ids it reports 
 Those comparisons are writable only because the generated type is small: the missing rubric
 points are computed in Swift and the connected concepts come from the ontology, so the two
 judged fields are a set of integers and a set of enum cases rather than prose. The Socratic
-question is never asserted on.
+question's wording is never asserted on — only that one came back at all.
 
 ### Running it
 

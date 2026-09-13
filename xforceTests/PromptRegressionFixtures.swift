@@ -24,7 +24,7 @@ import Testing
 ///
 /// The Socratic question is deliberately not asserted on. It is prose, it is meant to vary,
 /// and any assertion over it would be the string matching this suite exists to avoid.
-nonisolated struct PromptRegressionFixture: Sendable, CustomTestStringConvertible {
+struct PromptRegressionFixture: Sendable, CustomTestStringConvertible {
 
     /// Names the fixture in test output, so a failure says which learner drifted.
     let id: String
@@ -154,9 +154,12 @@ extension PromptRegressionFixture {
     /// the wild, and detecting it from the reasoning is the one thing in the panel only the
     /// model can do.
     ///
-    /// Rubric point 1 is expected covered because they say the call runs the body and hands
-    /// back a value, which is exactly what that point asks for. Point 5 — arguments are passed
-    /// by value — is expected absent, because they argue against it.
+    /// Rubric point 1 is expected covered off its second half: they say the call runs the body
+    /// and hands back a value, and they say nothing about declaration at all. Silence about
+    /// half of a compound point still leaves the half they wrote, which is why this differs
+    /// from the collections fixture above, where point 4 is withheld because the learner
+    /// asserts the *opposite* of its second half. Point 5 — arguments are passed by value — is
+    /// expected absent here for that stricter reason: they argue against it.
     static let functionsCopiesMisconception = PromptRegressionFixture(
         id: "functions-copies-misconception",
         conceptID: "functions",
@@ -174,8 +177,10 @@ extension PromptRegressionFixture {
     )
 
     /// **Partial but correct.** Integer division and the explicit conversion, said properly and
-    /// with no hedging that undoes it. Nothing is said about `let` and `var`, about inference,
-    /// or about how a `Double` prints, so three of the five points stay out of the expectation.
+    /// with no hedging that undoes it. Point 3 is covered off its second half — that `Int` and
+    /// `Double` do not combine without a conversion being asked for — while points 1, 2 and 5
+    /// stay out: nothing is said about `let` against `var`, about a type being inferred from
+    /// the literal it was written as, or about how a `Double` prints.
     static let valuesAndTypesIntegerDivisionPartial = PromptRegressionFixture(
         id: "values-and-types-integer-division-partial",
         conceptID: "values-and-types",
