@@ -131,33 +131,60 @@ struct StructuredFeedbackTests {
 
     /// Authored edges, resolved against the ontology. The model is never asked, so there is
     /// nothing here for it to drift on.
-    @Test func theConceptsThisOneConnectsToComeFromTheOntologyRatherThanFromTheModel() async throws {
+    @Test func theConceptsThisOneConnectsToComeFromTheOntologyRatherThanFromTheModel() async {
         let (viewModel, service) = makeLoop()
 
         await reachFeedback(viewModel)
 
-        let feedback = try #require(viewModel.structuredFeedback)
-        #expect(feedback.connections.map(\.id) == ["variables", "closures"])
-        #expect(feedback.connections.map(\.name) == ["Variables", "Closures"])
+        #expect(viewModel.connectedConcepts.map(\.id) == ["variables", "closures"])
+        #expect(viewModel.connectedConcepts.map(\.name) == ["Variables", "Closures"])
         #expect(service.calls.inferences == 1)
     }
 
-    @Test func anEdgeNamingAConceptTheOntologyDoesNotHaveIsDropped() async throws {
+    @Test func anEdgeNamingAConceptTheOntologyDoesNotHaveIsDropped() async {
         let (viewModel, _) = makeLoop()
 
         await reachFeedback(viewModel)
 
-        let feedback = try #require(viewModel.structuredFeedback)
-        #expect(feedback.connections.contains { $0.id == "vanished-concept" } == false)
+        #expect(viewModel.connectedConcepts.contains { $0.id == "vanished-concept" } == false)
     }
 
-    @Test func aConceptIsNeverListedAsConnectedToItself() async throws {
+    @Test func aConceptIsNeverListedAsConnectedToItself() async {
         let (viewModel, _) = makeLoop()
 
         await reachFeedback(viewModel)
 
-        let feedback = try #require(viewModel.structuredFeedback)
-        #expect(feedback.connections.contains { $0.id == "optionals" } == false)
+        #expect(viewModel.connectedConcepts.contains { $0.id == "optionals" } == false)
+    }
+
+    @Test func theConnectionsAreWithheldUntilTheGateOpensLikeEverythingElse() async {
+        let (viewModel, _) = makeLoop()
+        viewModel.load()
+
+        #expect(viewModel.connectedConcepts.isEmpty)
+
+        submitCorrectly(viewModel)
+        await finishGenerating(viewModel)
+
+        #expect(viewModel.phase == .socratic)
+        #expect(viewModel.connectedConcepts.isEmpty)
+
+        viewModel.skip()
+
+        #expect(viewModel.connectedConcepts.isEmpty == false)
+    }
+
+    /// The section that needs no model has to survive not having one, or graceful degradation
+    /// would stop at the panel's edge.
+    @Test func theConnectionsSurviveAMacWithNoModelToAsk() async {
+        let (viewModel, _) = makeLoop(availability: .deviceNotEligible)
+        viewModel.load()
+        submitCorrectly(viewModel)
+        await finishGenerating(viewModel)
+
+        #expect(viewModel.phase == .feedback)
+        #expect(viewModel.structuredFeedback == nil)
+        #expect(viewModel.connectedConcepts.map(\.id) == ["variables", "closures"])
     }
 
     // MARK: - The gate

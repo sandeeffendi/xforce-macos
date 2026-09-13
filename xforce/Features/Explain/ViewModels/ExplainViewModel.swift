@@ -119,6 +119,31 @@ final class ExplainViewModel {
         phase.isFeedbackUnlocked ? judged : nil
     }
 
+    /// The concepts the current one connects to, for the panel's "connect this" section.
+    ///
+    /// Read from the ontology's own authored `prerequisites` and `related` edges and from
+    /// nothing else — the model is never asked which concepts relate to which, because a small
+    /// on-device model choosing among a handful of them adds noise rather than signal. That is
+    /// why this hangs off the concept rather than off ``structuredFeedback``: the section is
+    /// there on a Mac with no Apple Intelligence, and on one whose generation failed.
+    ///
+    /// Gated on the phase for the same reason everything else in the panel is, so there is no
+    /// property a view could read to open part of the panel early.
+    var connectedConcepts: [Concept] {
+        guard phase.isFeedbackUnlocked, let concept else { return [] }
+
+        // Each id once, never the concept itself, and only ids the ontology can resolve. An
+        // unresolvable id already fails the content integrity suite, so dropping it here is
+        // about never rendering a blank row rather than about tolerating bad content.
+        var seen: Set<String> = [concept.id]
+
+        return (concept.prerequisites + concept.related).compactMap { id in
+            guard seen.contains(id) == false else { return nil }
+            seen.insert(id)
+            return content.concept(withID: id)
+        }
+    }
+
     /// Whether the model is working, so a pause does not read as a freeze.
     var isGenerating: Bool { generation.isRunning }
 
@@ -248,11 +273,7 @@ final class ExplainViewModel {
                     explanation: explanation
                 )
                 guard Task.isCancelled == false else { return }
-                judged = StructuredFeedback(
-                    concept: concept,
-                    feedback: result,
-                    ontology: content.concepts
-                )
+                judged = StructuredFeedback(concept: concept, feedback: result)
                 generation = .asked(result.socraticQuestion)
                 advance(to: .socratic)
             } catch is CancellationError {

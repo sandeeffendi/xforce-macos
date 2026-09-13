@@ -60,11 +60,7 @@ private struct ExplainScreenContent: View {
         .navigationTitle(AppSection.explain.title)
         .task { viewModel.load() }
         .inspector(isPresented: feedbackPresented) {
-            FeedbackInspector(
-                isLocked: viewModel.isFeedbackLocked,
-                phase: viewModel.phase,
-                generation: viewModel.generation
-            )
+            FeedbackInspector(viewModel: viewModel)
             .inspectorColumnWidth(
                 min: Theme.Size.inspectorMinWidth,
                 ideal: Theme.Size.inspectorIdealWidth,
@@ -508,31 +504,18 @@ private struct CommittedPanel: View {
     }
 }
 
-/// The model asking, not telling. Marked as the model's words so the learner never
-/// misremembers them as their own.
+/// The model asking, not telling. Marked as the model's words — through the same component
+/// every other piece of model output uses — so the learner never misremembers them as theirs.
 private struct SocraticQuestionCard: View {
     let question: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-            Label("A question about your reasoning", systemImage: "sparkles")
-                .font(Theme.Font.caption)
-                .foregroundStyle(Theme.Color.secondaryText)
-
+        ModelWrittenCard(title: "A question about your reasoning") {
             Text(question)
                 .font(Theme.Font.sectionTitle)
                 .foregroundStyle(Theme.Color.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Theme.Spacing.medium)
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.medium)
-                .strokeBorder(Theme.Color.brand)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("A question about your reasoning. \(question)")
     }
 }
 
@@ -561,67 +544,393 @@ private struct GeneratingNotice: View {
     }
 }
 
-/// Stories 13 and 14: the panel is on screen for the whole loop, and what it holds is
-/// decided by the phase rather than by anything the learner can press. The constraint has to
-/// read as intentional rather than as a broken app, which it cannot do if it is invisible.
+/// Stories 13, 14 and 32: the panel is on screen for the whole loop, what it holds is decided
+/// by the phase rather than by anything the learner can press, and once it opens it holds the
+/// same sections in the same order every time so the learner learns where to look.
+///
+/// It takes the view model rather than a dozen separate values. It is not a reusable component
+/// — it is the screen's other half, and every value it renders comes from one loop, so passing
+/// them one by one would only be a longer way of saying the same thing that could fall out of
+/// step. `@Observable` still narrows redraws to the properties actually read.
 private struct FeedbackInspector: View {
-    let isLocked: Bool
-    let phase: LoopPhase
-    let generation: FeedbackGeneration
+    let viewModel: ExplainViewModel
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-                Label {
-                    Text("Feedback")
-                        .font(Theme.Font.sectionTitle)
-                        .foregroundStyle(Theme.Color.primaryText)
-                } icon: {
-                    Image(systemName: isLocked ? "lock.fill" : "lock.open.fill")
-                        .foregroundStyle(Theme.Color.secondaryText)
-                }
+            VStack(alignment: .leading, spacing: Theme.Spacing.large) {
+                header
 
-                Text(message)
-                    .font(Theme.Font.body)
-                    .foregroundStyle(Theme.Color.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let lockedMessage {
+                    Text(lockedMessage)
+                        .font(Theme.Font.body)
+                        .foregroundStyle(Theme.Color.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    FeedbackPanel(
+                        conceptName: viewModel.concept?.name ?? "",
+                        outcome: viewModel.outcome,
+                        prediction: viewModel.prediction,
+                        expectedOutput: viewModel.expectedOutput ?? "",
+                        feedback: viewModel.structuredFeedback,
+                        noReadingExplanation: noReadingExplanation,
+                        connections: viewModel.connectedConcepts
+                    )
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Theme.Spacing.large)
         }
         .background(Theme.Color.windowBackground)
-        .accessibilityLabel(isLocked ? "Feedback, locked" : "Feedback")
+        .accessibilityLabel(viewModel.isFeedbackLocked ? "Feedback, locked" : "Feedback")
     }
 
-    /// What the model did takes precedence over where the loop is, because a learner whose
-    /// Mac has no model needs to be told that and not told to keep going.
-    private var message: String {
-        switch generation {
-        case .idle, .asked:
-            phaseMessage
-        case .running:
-            "The model is reading your reasoning. The feedback stays locked until you have been asked about it and have answered."
+    private var header: some View {
+        Label {
+            Text("Feedback")
+                .font(Theme.Font.sectionTitle)
+                .foregroundStyle(Theme.Color.primaryText)
+        } icon: {
+            Image(systemName: viewModel.isFeedbackLocked ? "lock.fill" : "lock.open.fill")
+                .foregroundStyle(Theme.Color.secondaryText)
+        }
+    }
+
+    /// Why there is no reading to show. Each reason says something different about what the
+    /// learner should do next, so none of them is flattened into "unavailable".
+    private var noReadingExplanation: String? {
+        switch viewModel.generation {
         case .cancelled:
-            "You stopped the question before it arrived, so there is nothing to show here. Nothing else in the loop is affected."
+            "You stopped the question before it arrived, so there is no reading of your explanation. Nothing else in the loop is affected."
         case .unavailable(let availability):
-            availability.message ?? phaseMessage
+            availability.message
         case .failed(let explanation):
             explanation
+        case .idle, .running, .asked:
+            nil
         }
     }
 
-    private var phaseMessage: String {
-        switch phase {
-        case .prompt:
-            "Locked until you commit to an output and a reason. Working it out yourself is the part that does the learning."
-        case .reveal:
-            "Locked until you have been asked about your reasoning and have answered."
-        case .socratic:
-            "Answer the question or say you have nothing to add, and this unlocks."
-        case .feedback, .committed:
-            "Unlocked. Which rubric points your explanation covered, what it missed and any misconception it showed arrive once the feedback step is built."
+    /// Why the panel is shut, or `nil` once it is open — which is the same question as "is the
+    /// panel open", asked of the same phase the lock icon reads. There is no message for the
+    /// unlocked phases because there is nothing to explain: the panel itself is the answer.
+    private var lockedMessage: String? {
+        if viewModel.isGenerating {
+            return "The model is reading your reasoning. The feedback stays locked until you have been asked about it and have answered."
         }
+
+        switch viewModel.phase {
+        case .prompt:
+            return "Locked until you commit to an output and a reason. Working it out yourself is the part that does the learning."
+        case .reveal:
+            return "Locked until you have been asked about your reasoning and have answered."
+        case .socratic:
+            return "Answer the question or say you have nothing to add, and this unlocks."
+        case .feedback, .committed:
+            return nil
+        }
+    }
+}
+
+/// The unlocked panel: the fixed running order, written out once, in one sequence.
+///
+/// Driven by values rather than by the loop, so "the same sections in the same order every
+/// time" is a property of one view that can be looked at in a preview, rather than a promise
+/// spread across the screen. Only the misconception section is conditional, and it is absent
+/// rather than empty — telling a learner about a wrong belief they did not show is worse than
+/// saying nothing at all.
+private struct FeedbackPanel: View {
+    let conceptName: String
+    let outcome: PredictionOutcome?
+    let prediction: String
+    let expectedOutput: String
+
+    /// The model's reading, or `nil` when there was none to be had.
+    let feedback: StructuredFeedback?
+
+    /// Why there was none, shown in the reading's place so the order still holds.
+    let noReadingExplanation: String?
+
+    /// From the ontology, so this section survives having no model at all.
+    let connections: [Concept]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.large) {
+            if let outcome {
+                FeedbackSection(title: "What it printed") {
+                    OutputComparison(
+                        outcome: outcome,
+                        prediction: prediction,
+                        expectedOutput: expectedOutput
+                    )
+                }
+            }
+
+            modelReading
+
+            FeedbackSection(title: "Connect this") {
+                ConnectionList(conceptName: conceptName, connections: connections)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The model's half, and only the model's half, inside the one component that says so.
+    ///
+    /// The rubric wording and the correction are authored content, but *which* points it
+    /// credits and *which* belief it names are the model's reading of what the learner wrote,
+    /// and that is the thing they must never remember as their own conclusion.
+    @ViewBuilder
+    private var modelReading: some View {
+        if let feedback {
+            ModelWrittenCard(title: "Read by the on-device model") {
+                VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+                    RubricList(
+                        title: "What you got right",
+                        points: feedback.covered,
+                        symbol: "checkmark.circle.fill",
+                        tint: Theme.Color.success,
+                        emptyMessage: "None of the rubric came through in what you wrote."
+                    )
+
+                    RubricList(
+                        title: "What is missing",
+                        points: feedback.missing,
+                        symbol: "circle.dashed",
+                        tint: Theme.Color.secondaryText,
+                        emptyMessage: "Nothing. Your explanation covered every point."
+                    )
+
+                    if feedback.hasMisconception {
+                        MisconceptionList(misconceptions: feedback.misconceptions)
+                    }
+                }
+            }
+        } else if let noReadingExplanation {
+            // Not marked as the model's words, because there are none: nothing was written.
+            FeedbackSection(title: "What you got right") {
+                Text(noReadingExplanation)
+                    .font(Theme.Font.body)
+                    .foregroundStyle(Theme.Color.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+/// One heading and its contents. The panel's sections are all this shape, which is what keeps
+/// them looking like one list rather than five separate designs.
+private struct FeedbackSection<Content: View>: View {
+    let title: String
+
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            Text(title)
+                .font(Theme.Font.sectionTitle)
+                .foregroundStyle(Theme.Color.primaryText)
+
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The prediction beside the real output, restated in the panel so the verdict and the
+/// feedback on it can be read without looking away.
+///
+/// The prediction is the learner's own text and is presented plainly. Everything the model
+/// produced sits below it inside a marked card, so the two never blur together.
+private struct OutputComparison: View {
+    let outcome: PredictionOutcome
+    let prediction: String
+    let expectedOutput: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            Label {
+                Text(verdict)
+                    .font(Theme.Font.body)
+                    .foregroundStyle(Theme.Color.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } icon: {
+                Image(systemName: symbol)
+                    .foregroundStyle(tint)
+            }
+
+            quoted("What you predicted", prediction)
+            quoted("What it prints", expectedOutput)
+        }
+    }
+
+    private func quoted(_ title: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+            Text(title)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.secondaryText)
+
+            Text(text)
+                .font(Theme.Font.code)
+                .foregroundStyle(Theme.Color.primaryText)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Theme.Spacing.small)
+                .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.small))
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var verdict: String {
+        switch outcome {
+        case .correct: "Your prediction matched."
+        case .incorrect: "Your prediction did not match."
+        }
+    }
+
+    private var symbol: String {
+        switch outcome {
+        case .correct: "checkmark.circle.fill"
+        case .incorrect: "xmark.circle.fill"
+        }
+    }
+
+    private var tint: Color {
+        switch outcome {
+        case .correct: Theme.Color.success
+        case .incorrect: Theme.Color.failure
+        }
+    }
+}
+
+/// One half of the rubric. Both halves are drawn by the same view because they are the same
+/// list split in two — which is exactly what computing the complement made them.
+private struct RubricList: View {
+    let title: String
+    let points: [RubricPoint]
+    let symbol: String
+    let tint: Color
+    let emptyMessage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+            Text(title)
+                .font(Theme.Font.sectionTitle)
+                .foregroundStyle(Theme.Color.primaryText)
+
+            if points.isEmpty {
+                Text(emptyMessage)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(points) { point in
+                    row(point)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The symbol differs as well as the colour, and the heading says which list this is, so
+    /// nothing here depends on telling green from grey.
+    private func row(_ point: RubricPoint) -> some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.small) {
+            Image(systemName: symbol)
+                .font(Theme.Font.caption)
+                .foregroundStyle(tint)
+                .frame(width: Theme.Size.feedbackMarker)
+                .accessibilityHidden(true)
+
+            Text(point.text)
+                .font(Theme.Font.body)
+                .foregroundStyle(Theme.Color.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(point.text)")
+    }
+}
+
+/// Story 29: a detected misconception is named **and corrected**, because flagging a wrong
+/// belief without saying what replaces it leaves the learner knowing only that they are wrong.
+private struct MisconceptionList: View {
+    let misconceptions: [Misconception]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            Text("Worth replacing")
+                .font(Theme.Font.sectionTitle)
+                .foregroundStyle(Theme.Color.primaryText)
+
+            ForEach(misconceptions) { misconception in
+                VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+                    Label {
+                        Text(misconception.name)
+                            .font(Theme.Font.body)
+                            .foregroundStyle(Theme.Color.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Color.failure)
+                    }
+
+                    Text(misconception.correction)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Worth replacing. \(misconception.name). \(misconception.correction)")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Story 31: the neighbours, with a prompt to think about the link rather than an explanation
+/// of it. The link is the learner's to make — handing it over would be the same mistake the
+/// Socratic question exists to avoid.
+private struct ConnectionList: View {
+    let conceptName: String
+    let connections: [Concept]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            if connections.isEmpty {
+                Text("Nothing in the ontology is authored as a neighbour of \(conceptName) yet.")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Before you move on: how would you explain the link between \(conceptName) and each of these?")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                ForEach(connections) { concept in
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+                        Text(concept.name)
+                            .font(Theme.Font.body)
+                            .foregroundStyle(Theme.Color.primaryText)
+
+                        Text(concept.summary)
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Color.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.Spacing.small)
+                    .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.small))
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -639,4 +948,76 @@ private struct FeedbackInspector: View {
         .environment(ContentService())
         .environment(SchedulingService.inMemory())
         .preferredColorScheme(.dark)
+}
+
+#Preview("Feedback panel, light") {
+    FeedbackPanel.preview
+        .preferredColorScheme(.light)
+}
+
+#Preview("Feedback panel, dark") {
+    FeedbackPanel.preview
+        .preferredColorScheme(.dark)
+}
+
+private extension FeedbackPanel {
+
+    /// The unlocked panel with every section populated, including the conditional one.
+    ///
+    /// Worth its own preview because the panel is only reachable at the end of a whole session
+    /// and cannot be driven from a screen preview — and because the wash marking model-written
+    /// text is a new authored colour that has to be checked in both appearances.
+    static var preview: some View {
+        let concept = Concept(
+            id: "optionals",
+            name: "Optionals",
+            summary: "A value that may be absent.",
+            rubric: [
+                RubricPoint(number: 1, text: "An optional either holds a value or holds nil."),
+                RubricPoint(number: 2, text: "Printing an optional shows the Optional(...) wrapper."),
+                RubricPoint(number: 3, text: "The value has to be unwrapped before it can be used."),
+            ],
+            misconceptions: [
+                Misconception(
+                    id: "printing-shows-the-value",
+                    name: "Printing an optional prints the value it holds",
+                    correction: "print describes the optional itself, so an Int? holding 5 prints as Optional(5)."
+                )
+            ],
+            prerequisites: ["variables"],
+            related: []
+        )
+
+        return ScrollView {
+            FeedbackPanel(
+                conceptName: concept.name,
+                outcome: .incorrect,
+                prediction: "5",
+                expectedOutput: "Optional(5)",
+                feedback: StructuredFeedback(
+                    concept: concept,
+                    feedback: ExplanationFeedback(
+                        socraticQuestion: "What told you the wrapper would be gone?",
+                        coveredRubricPoints: [1],
+                        misconceptions: [.printingShowsTheValue]
+                    )
+                ),
+                noReadingExplanation: nil,
+                connections: [
+                    Concept(
+                        id: "variables",
+                        name: "Variables",
+                        summary: "A name bound to a value, and whether that binding can change.",
+                        rubric: [],
+                        misconceptions: [],
+                        prerequisites: [],
+                        related: []
+                    )
+                ]
+            )
+            .padding(Theme.Spacing.large)
+        }
+        .frame(width: Theme.Size.inspectorIdealWidth)
+        .background(Theme.Color.windowBackground)
+    }
 }
