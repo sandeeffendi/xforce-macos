@@ -1,0 +1,79 @@
+{
+  "concepts": [
+    {
+      "id": "optionals",
+      "name": "Optionals",
+      "summary": "An optional is a type that either holds a value or holds nothing at all. Swift makes that possibility part of the type, so the absence has to be dealt with before the value can be used.",
+      "rubric": [
+        {
+          "number": 1,
+          "text": "An optional either holds a value or holds nil, and `Int?` is a different type from `Int`."
+        },
+        {
+          "number": 2,
+          "text": "Printing an optional directly shows the `Optional(...)` wrapper rather than the value inside it."
+        },
+        {
+          "number": 3,
+          "text": "The value has to be unwrapped before it can be used: optional binding with `if let`, nil-coalescing with `??`, or force unwrapping with `!`."
+        },
+        {
+          "number": 4,
+          "text": "`??` supplies a fallback for the nil case and produces a non-optional result for that expression."
+        },
+        {
+          "number": 5,
+          "text": "Force unwrapping a nil optional stops the program at runtime, which is why it is the last resort rather than the default."
+        }
+      ],
+      "misconceptions": [
+        {
+          "id": "optional-is-the-same-as-the-value",
+          "name": "An optional can be used wherever the underlying value can",
+          "correction": "`Int?` and `Int` are distinct types. An optional has to be unwrapped before the value inside it can take part in arithmetic, comparison, or anything else the underlying type allows."
+        },
+        {
+          "id": "printing-shows-the-value",
+          "name": "Printing an optional prints the value it holds",
+          "correction": "`print` describes the optional itself, so an `Int?` holding 5 prints as `Optional(5)`. The wrapper disappears only once the value is unwrapped."
+        },
+        {
+          "id": "nil-coalescing-unwraps-permanently",
+          "name": "`??` unwraps the optional everywhere after it is used",
+          "correction": "`??` produces a non-optional result for that one expression. The original variable keeps its optional type and still has to be unwrapped the next time it is used."
+        },
+        {
+          "id": "nil-is-zero-or-empty",
+          "name": "nil is the same as 0, an empty string, or false",
+          "correction": "nil means there is no value at all. An `Int?` holding 0 and an `Int?` holding nil are different things, and only one of them has a number in it."
+        }
+      ]
+    }
+  ],
+  "snippets": [
+    {
+      "id": "optionals-print-wrapped",
+      "conceptID": "optionals",
+      "code": "let age: Int? = 5\nprint(age)",
+      "expectedOutput": "Optional(5)"
+    },
+    {
+      "id": "optionals-nil-coalescing",
+      "conceptID": "optionals",
+      "code": "let storedName: String? = nil\nlet displayName = storedName ?? \"Anonymous\"\nprint(displayName)",
+      "expectedOutput": "Anonymous"
+    },
+    {
+      "id": "optionals-binding-both-branches",
+      "conceptID": "optionals",
+      "code": "let ratings: [String: Int] = [\"swift\": 9]\n\nif let swift = ratings[\"swift\"] {\n    print(\"swift:\", swift)\n}\n\nif let rust = ratings[\"rust\"] {\n    print(\"rust:\", rust)\n} else {\n    print(\"rust: not rated\")\n}",
+      "expectedOutput": "swift: 9\nrust: not rated"
+    },
+    {
+      "id": "optionals-failable-conversion",
+      "conceptID": "optionals",
+      "code": "let raw = \"42\"\nlet parsed = Int(raw)\nprint(parsed == nil)\nprint(parsed!)",
+      "expectedOutput": "false\n42"
+    }
+  ]
+}
