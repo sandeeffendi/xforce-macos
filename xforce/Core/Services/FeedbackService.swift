@@ -94,16 +94,48 @@ nonisolated enum FeedbackError: Error, Equatable {
 
 /// One inference's worth of feedback on a session.
 ///
-/// A single question in this slice. Rubric coverage and detected misconceptions join this
-/// same type in the feedback slice rather than arriving from a second call: a language model
-/// session carries its transcript forward, so a second call would resend the first call and
-/// its output and push the total past the context window. The staging the learner
-/// experiences is a display concern, handled by the view model withholding what it already
-/// holds.
+/// The question and the judgement arrive together, from one call, rather than from two: a
+/// language model session carries its transcript forward, so a second call would resend the
+/// first call and its output and push the total past the context window. The staging the
+/// learner experiences is a display concern, handled by the view model withholding what it
+/// already holds.
+///
+/// This is the model's raw answer, not the panel's content. It is deliberately the smallest
+/// shape that lets the panel be built: the missing rubric points are computed from
+/// ``coveredRubricPoints`` in Swift, and the connected concepts are read from the ontology and
+/// never asked for at all.
 nonisolated struct ExplanationFeedback: Hashable, Sendable {
 
     /// A question about the learner's reasoning. Never a correction.
     let socraticQuestion: String
+
+    /// The numbers of the rubric points the model judged the explanation to have covered,
+    /// against the numbered list it was given in the prompt.
+    ///
+    /// Only the covered ones. Asking for the missing ones too would let the two lists overlap,
+    /// and the panel could then show one point under both headings; computing the complement
+    /// makes the two sections consistent by construction. Numbers outside the concept's rubric
+    /// are discarded where the panel is built, not here — this type records what the model
+    /// said, including when what it said was nonsense.
+    let coveredRubricPoints: [Int]
+
+    /// The misconceptions the model detected, drawn from a closed set it cannot add to.
+    ///
+    /// Still filtered afterwards: the set is closed over the whole ontology, so a case that
+    /// belongs to some other concept has to be discarded before the learner sees it.
+    let misconceptions: [MisconceptionID]
+
+    /// Defaults for the two judged fields, so a caller that only cares about the question —
+    /// a preview, or a test of the gate — does not have to say "nothing" twice.
+    init(
+        socraticQuestion: String,
+        coveredRubricPoints: [Int] = [],
+        misconceptions: [MisconceptionID] = []
+    ) {
+        self.socraticQuestion = socraticQuestion
+        self.coveredRubricPoints = coveredRubricPoints
+        self.misconceptions = misconceptions
+    }
 }
 
 /// Produces the model's half of the explanation loop.

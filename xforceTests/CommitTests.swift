@@ -620,7 +620,9 @@ extension ContentLibrary {
                     name: "A wrong belief about \(name.lowercased())",
                     correction: "What replaces it."
                 )
-            ]
+            ],
+            prerequisites: [],
+            related: []
         )
     }
 }

@@ -86,6 +86,54 @@ struct ContentIntegrityTests {
         }
     }
 
+    @Test func everyPrerequisiteAndRelatedIdResolvesToAConceptThatExists() {
+        let service = ContentService()
+        let conceptIDs = Set(service.concepts.map(\.id))
+
+        for concept in service.concepts {
+            for id in concept.prerequisites + concept.related {
+                #expect(conceptIDs.contains(id), "\(concept.id) points at a concept \(id) that does not exist")
+            }
+        }
+    }
+
+    @Test func noConceptNamesItselfAsOneOfItsOwnNeighbours() {
+        let service = ContentService()
+
+        for concept in service.concepts {
+            #expect(
+                (concept.prerequisites + concept.related).contains(concept.id) == false,
+                "\(concept.id) names itself as a neighbour"
+            )
+        }
+    }
+
+    @Test func misconceptionIdsAreUniqueAcrossTheWholeOntology() {
+        let service = ContentService()
+        let ids = service.concepts.flatMap { $0.misconceptions.map(\.id) }
+
+        #expect(Set(ids).count == ids.count, "two concepts share a misconception id")
+    }
+
+    /// The one guarantee that replaces a build script. The enum is hand-written and committed,
+    /// so nothing keeps it in step with the ontology except this: an id authored into the
+    /// content with no case, or a case with no id, fails the build rather than the learner.
+    @Test func theMisconceptionEnumMatchesTheOntologyInBothDirections() {
+        let service = ContentService()
+        let authored = Set(service.concepts.flatMap { $0.misconceptions.map(\.id) })
+        let generable = Set(MisconceptionID.allCases.map(\.rawValue))
+
+        #expect(
+            authored.subtracting(generable).isEmpty,
+            "the ontology authors misconceptions the enum has no case for: \(authored.subtracting(generable).sorted())"
+        )
+        #expect(
+            generable.subtracting(authored).isEmpty,
+            "the enum carries cases the ontology no longer authors: \(generable.subtracting(authored).sorted())"
+        )
+        #expect(authored == generable)
+    }
+
     private func trimmedTrailing(_ line: String) -> String {
         var line = line
         while let last = line.last, last.isWhitespace {
@@ -225,7 +273,9 @@ extension ContentLibrary {
                             name: "Printing an optional prints the value it holds",
                             correction: "Printing an optional shows the Optional(...) wrapper."
                         )
-                    ]
+                    ],
+                    prerequisites: [],
+                    related: []
                 )
             ],
             snippets: [

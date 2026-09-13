@@ -44,6 +44,19 @@ nonisolated struct Concept: Identifiable, Hashable, Codable, Sendable {
 
     /// The curated wrong beliefs a learner may hold about this concept.
     let misconceptions: [Misconception]
+
+    /// The concepts this one builds on, by id.
+    let prerequisites: [String]
+
+    /// The concepts this one sits beside, by id.
+    ///
+    /// These edges and ``prerequisites`` are authored, and they are the *only* source of the
+    /// feedback panel's "connect this" section: the model is never asked which concepts relate
+    /// to which. A small on-device model choosing among a handful of concepts adds noise rather
+    /// than signal, and driving the section from data removes a generated field along with a
+    /// whole class of label drift. The content integrity suite asserts that every id here
+    /// resolves and that no concept names itself.
+    let related: [String]
 }
 
 /// Where a concept sits on the graph, in unit coordinates.
@@ -76,8 +89,8 @@ nonisolated struct RubricPoint: Identifiable, Hashable, Codable, Sendable {
 
 /// A wrong belief a learner may hold about a concept, paired with what replaces it.
 ///
-/// Authored data for now. The closed generated type that constrains what a model may report
-/// arrives with the feedback slice, which is the first requirement that needs one.
+/// Authored data. What a model may report about it is constrained separately, by
+/// ``MisconceptionID`` — a closed generated type whose raw values are these ``id``s.
 nonisolated struct Misconception: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String

@@ -21,8 +21,12 @@ final class FakeFeedbackService: FeedbackService {
     /// What the one inference does when it is asked for.
     enum Behaviour: Sendable {
 
-        /// Returns this question.
+        /// Returns this question, with nothing judged about the explanation.
         case answers(String)
+
+        /// Returns this whole inference: the question, the rubric numbers the model claims to
+        /// have found, and the misconceptions it claims to have detected.
+        case returns(ExplanationFeedback)
 
         /// Throws this error instead of answering.
         case fails(FeedbackError)
@@ -78,6 +82,9 @@ final class FakeFeedbackService: FeedbackService {
         switch behaviour {
         case .answers(let question):
             return ExplanationFeedback(socraticQuestion: question)
+
+        case .returns(let feedback):
+            return feedback
 
         case .fails(let error):
             throw error
