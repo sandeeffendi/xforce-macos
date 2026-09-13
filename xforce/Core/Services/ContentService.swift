@@ -87,6 +87,15 @@ final class ContentService {
         concepts.first { $0.id == id }
     }
 
+    /// The snippet one note names, or `nil` when the content no longer ships it.
+    ///
+    /// Notes are immutable and outlive any one version of the authored content, so a stored
+    /// snippet id is a reference that can go stale. Answering with `nil` rather than
+    /// insisting is what lets a note survive the snippet it was written against.
+    func snippet(withID id: String) -> Snippet? {
+        snippets.first { $0.id == id }
+    }
+
     /// The snippets authored for one concept, in the order they were authored.
     func snippets(forConceptID id: String) -> [Snippet] {
         snippets.filter { $0.conceptID == id }
@@ -135,12 +144,31 @@ final class ContentService {
             }
         }
 
-        return leastRecentlySeen(seen: seen)
+        return leastRecentlySeen(among: snippets, seen: seen)
+    }
+
+    /// The snippet to put in front of the learner for one named concept — the deliberate
+    /// revisit the graph offers, rather than the loop choosing for itself.
+    ///
+    /// The same two rules the unscoped choice uses, narrowed to one concept: the first snippet
+    /// they have not met, and failing that the one they met longest ago. Recalling beats
+    /// remembering a specific answer, which is why unseen wins; and a concept whose snippets
+    /// have all been met still has to be revisitable, which is why there is a fallback at all.
+    ///
+    /// - Returns: `nil` when the concept has nothing authored to practise.
+    func nextSnippet(forConceptID id: String, seen: [String: Date]) -> Snippet? {
+        let candidates = snippets(forConceptID: id)
+
+        if let unseen = candidates.first(where: { seen[$0.id] == nil }) {
+            return unseen
+        }
+
+        return leastRecentlySeen(among: candidates, seen: seen)
     }
 
     /// Ties are broken by authored order, so the choice never depends on how the store happened
     /// to enumerate what it holds.
-    private func leastRecentlySeen(seen: [String: Date]) -> Snippet? {
+    private func leastRecentlySeen(among snippets: [Snippet], seen: [String: Date]) -> Snippet? {
         snippets
             .enumerated()
             .min { lhs, rhs in

@@ -14,12 +14,24 @@ import SwiftUI
 /// no optional dependency, and no "not configured yet" state for an intent method to defend.
 /// Every later screen follows the same pattern.
 struct ExplainScreen: View {
+
+    /// The concept the learner asked to practise, or `nil` when the loop chooses for itself.
+    ///
+    /// Arrives from the route rather than from a shared object, which is what lets the graph
+    /// send the learner here by pushing a value and lets the same screen serve both doors.
+    var conceptID: String?
+
     @Environment(ContentService.self) private var content
     @Environment(\.feedback) private var feedback
     @Environment(SchedulingService.self) private var scheduling
 
     var body: some View {
-        ExplainScreenContent(content: content, feedback: feedback, scheduling: scheduling)
+        ExplainScreenContent(
+            content: content,
+            feedback: feedback,
+            scheduling: scheduling,
+            conceptID: conceptID
+        )
     }
 }
 
@@ -30,9 +42,19 @@ private struct ExplainScreenContent: View {
     ///   established, so a service instance replaced later would not reach the view model.
     ///   Services are created once in `XforceApp` and never replaced, so that cannot happen
     ///   today; a change to service lifetime has to revisit this.
-    init(content: ContentService, feedback: any FeedbackService, scheduling: SchedulingService) {
+    init(
+        content: ContentService,
+        feedback: any FeedbackService,
+        scheduling: SchedulingService,
+        conceptID: String?
+    ) {
         _viewModel = State(
-            initialValue: ExplainViewModel(content: content, feedback: feedback, scheduling: scheduling)
+            initialValue: ExplainViewModel(
+                content: content,
+                feedback: feedback,
+                scheduling: scheduling,
+                conceptID: conceptID
+            )
         )
     }
 
@@ -699,35 +721,15 @@ private struct FeedbackPanel: View {
     @ViewBuilder
     private var modelReading: some View {
         if let feedback {
-            ModelWrittenCard(title: modelReadingTitle) {
-                VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
-                    RubricList(
-                        title: "What you got right",
-                        points: feedback.covered,
-                        symbol: "checkmark.circle.fill",
-                        tint: Theme.Color.success,
-                        emptyMessage: "None of the rubric came through in what you wrote."
-                    )
-
-                    RubricList(
-                        title: "What is missing",
-                        points: feedback.missing,
-                        symbol: "circle.dashed",
-                        tint: Theme.Color.secondaryText,
-                        emptyMessage: "Nothing. Your explanation covered every point."
-                    )
-
-                    if feedback.hasMisconception {
-                        MisconceptionList(misconceptions: feedback.misconceptions)
-                    }
-                }
-            }
+            // The shared component, so the reading the learner sees now and the one they read
+            // back from this note in the graph months later are the same rendering.
+            ModelReadingCard(reading: feedback)
         } else if let noReadingExplanation {
             // The same slot, under the same heading, so the running order still holds when
             // there was no model. Not marked as the model's words, because there are none —
             // and not filed under "what you got right", which would put an explanation of the
             // model's absence under a heading claiming to list the learner's hits.
-            FeedbackSection(title: modelReadingTitle) {
+            FeedbackSection(title: ModelReadingCard.title) {
                 Text(noReadingExplanation)
                     .font(Theme.Font.body)
                     .foregroundStyle(Theme.Color.secondaryText)
@@ -735,10 +737,6 @@ private struct FeedbackPanel: View {
             }
         }
     }
-
-    /// Named once, so the slot keeps the same heading whether the model read the explanation
-    /// or could not be reached.
-    private var modelReadingTitle: String { "Read by the on-device model" }
 }
 
 /// One heading and its contents. The panel's sections are all this shape, which is what keeps
@@ -809,94 +807,6 @@ private struct OutputComparison: View {
         case .correct: "Your prediction matched."
         case .incorrect: "Your prediction did not match."
         }
-    }
-}
-
-/// One half of the rubric. Both halves are drawn by the same view because they are the same
-/// list split in two — which is exactly what computing the complement made them.
-private struct RubricList: View {
-    let title: String
-    let points: [RubricPoint]
-    let symbol: String
-    let tint: Color
-    let emptyMessage: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
-            Text(title)
-                .font(Theme.Font.sectionTitle)
-                .foregroundStyle(Theme.Color.primaryText)
-
-            if points.isEmpty {
-                Text(emptyMessage)
-                    .font(Theme.Font.caption)
-                    .foregroundStyle(Theme.Color.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                ForEach(points) { point in
-                    row(point)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    /// The symbol differs as well as the colour, and the heading says which list this is, so
-    /// nothing here depends on telling green from grey.
-    private func row(_ point: RubricPoint) -> some View {
-        HStack(alignment: .top, spacing: Theme.Spacing.small) {
-            Image(systemName: symbol)
-                .font(Theme.Font.caption)
-                .foregroundStyle(tint)
-                .frame(width: Theme.Size.feedbackMarker)
-                .accessibilityHidden(true)
-
-            Text(point.text)
-                .font(Theme.Font.body)
-                .foregroundStyle(Theme.Color.primaryText)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(point.text)")
-    }
-}
-
-/// Story 29: a detected misconception is named **and corrected**, because flagging a wrong
-/// belief without saying what replaces it leaves the learner knowing only that they are wrong.
-private struct MisconceptionList: View {
-    let misconceptions: [Misconception]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-            Text("Worth replacing")
-                .font(Theme.Font.sectionTitle)
-                .foregroundStyle(Theme.Color.primaryText)
-
-            ForEach(misconceptions) { misconception in
-                VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
-                    Label {
-                        Text(misconception.name)
-                            .font(Theme.Font.body)
-                            .foregroundStyle(Theme.Color.primaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                    } icon: {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(Theme.Font.caption)
-                            .foregroundStyle(Theme.Color.failure)
-                    }
-
-                    Text(misconception.correction)
-                        .font(Theme.Font.caption)
-                        .foregroundStyle(Theme.Color.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Worth replacing. \(misconception.name). \(misconception.correction)")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

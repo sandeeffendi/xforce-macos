@@ -26,6 +26,10 @@ struct GraphScreen: View {
 private struct GraphScreenContent: View {
     @State private var viewModel: GraphViewModel
 
+    /// Navigation is expressed as intent, never as a destination view. The inspector's
+    /// practise control pushes the route the view model named; nothing here builds a screen.
+    @Environment(Router.self) private var router
+
     init(content: ContentService, scheduling: SchedulingService) {
         _viewModel = State(initialValue: GraphViewModel(content: content, scheduling: scheduling))
     }
@@ -47,7 +51,12 @@ private struct GraphScreenContent: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             case .loaded:
-                ConceptGraphView(nodes: viewModel.nodes, edges: viewModel.edges)
+                ConceptGraphView(
+                    nodes: viewModel.nodes,
+                    edges: viewModel.edges,
+                    selectedID: viewModel.selectedConceptID,
+                    onSelect: { viewModel.select($0) }
+                )
 
                 Divider()
 
@@ -58,11 +67,47 @@ private struct GraphScreenContent: View {
         .background(Theme.Color.windowBackground)
         .navigationTitle(AppSection.graph.title)
         .task { viewModel.load() }
+        .inspector(isPresented: inspectorPresented) {
+            if let concept = viewModel.selectedConcept {
+                ConceptInspector(
+                    concept: concept,
+                    history: viewModel.history,
+                    onStartSession: startSession
+                )
+                .inspectorColumnWidth(
+                    min: Theme.Size.inspectorMinWidth,
+                    ideal: Theme.Size.inspectorIdealWidth,
+                    max: Theme.Size.inspectorMaxWidth
+                )
+            }
+        }
+    }
+
+    /// The inspector follows the selection. Closing it is the learner saying they are done
+    /// with that concept, so it clears the selection rather than leaving the graph ringed
+    /// around a concept nothing is showing.
+    private var inspectorPresented: Binding<Bool> {
+        Binding(
+            get: { viewModel.isInspectorPresented },
+            set: { isPresented in
+                guard isPresented == false else { return }
+                viewModel.clearSelection()
+            }
+        )
+    }
+
+    /// Pushes the route the view model named. The practice screen it resolves to starts where
+    /// every pass through the loop starts, so the gate arrives with it.
+    private func startSession() {
+        guard let route = viewModel.sessionRoute else { return }
+
+        router.navigate(to: route)
     }
 }
 
 #Preview("Light") {
     GraphScreen()
+        .environment(Router())
         .environment(ContentService())
         .environment(SchedulingService.inMemory())
         .preferredColorScheme(.light)
@@ -70,6 +115,7 @@ private struct GraphScreenContent: View {
 
 #Preview("Dark") {
     GraphScreen()
+        .environment(Router())
         .environment(ContentService())
         .environment(SchedulingService.inMemory())
         .preferredColorScheme(.dark)

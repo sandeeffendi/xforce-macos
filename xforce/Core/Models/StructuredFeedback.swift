@@ -25,6 +25,11 @@ import Foundation
 /// at all, so they are not carried by the type that exists to make the model's answer safe;
 /// the view model reads them straight from the ontology, and they survive on a Mac that has no
 /// model to ask.
+///
+/// It lives in `Core` rather than in the practice feature because the panel that shows a live
+/// reading and the graph inspector that shows a stored one sit in different features, and
+/// features may not import each other. The two surfaces rebuilding a reading through the same
+/// type is what stops them ever coming to different conclusions about the same session.
 nonisolated struct StructuredFeedback: Hashable, Sendable {
 
     /// The rubric points the explanation covered, in authored order.
@@ -44,7 +49,27 @@ nonisolated struct StructuredFeedback: Hashable, Sendable {
     ///     only things the model's answer is allowed to select from.
     ///   - feedback: what the model said, unfiltered.
     init(concept: Concept, feedback: ExplanationFeedback) {
-        let claimed = Set(feedback.coveredRubricPoints)
+        self.init(
+            concept: concept,
+            coveredRubricPoints: feedback.coveredRubricPoints,
+            detectedMisconceptionIDs: feedback.misconceptions.map(\.rawValue)
+        )
+    }
+
+    /// Rebuilds a reading from what a note stored.
+    ///
+    /// The note keeps only what the model actually judged — the rubric numbers and the
+    /// misconception ids — so reading a note back is the same filtering against the same
+    /// authored concept, done by the same type. That is what stops the history and the live
+    /// panel from ever disagreeing about one session, and what lets the rubric wording be
+    /// re-authored without rewriting a single immutable note.
+    ///
+    /// - Parameters:
+    ///   - concept: the concept the note was written about.
+    ///   - coveredRubricPoints: the numbers the model reported, as stored.
+    ///   - detectedMisconceptionIDs: the misconception ids it reported, as stored.
+    init(concept: Concept, coveredRubricPoints: [Int], detectedMisconceptionIDs: [String]) {
+        let claimed = Set(coveredRubricPoints)
 
         // Intersecting with the authored rubric is what discards an out-of-range number: there
         // is no point to match, so nothing is rendered and nothing has to be range-checked.
@@ -53,7 +78,7 @@ nonisolated struct StructuredFeedback: Hashable, Sendable {
         covered = concept.rubric.filter { claimed.contains($0.number) }
         missing = concept.rubric.filter { claimed.contains($0.number) == false }
 
-        let detected = Set(feedback.misconceptions.map(\.rawValue))
+        let detected = Set(detectedMisconceptionIDs)
         misconceptions = concept.misconceptions.filter { detected.contains($0.id) }
     }
 

@@ -23,6 +23,14 @@ final class ExplainViewModel {
     private let feedback: any FeedbackService
     private let scheduling: SchedulingService
 
+    /// The concept the learner asked to practise, or `nil` when the loop chooses for itself.
+    ///
+    /// Set once, from the route that opened the screen. It governs which snippet the session
+    /// opens on and nothing else: a revisit is an ordinary pass through the loop, starting
+    /// where every pass starts, so the gate is exactly as intact through this door as through
+    /// the other one.
+    private let requestedConceptID: String?
+
     private(set) var state: ViewState = .idle
     private(set) var phase: LoopPhase = .prompt
 
@@ -90,10 +98,16 @@ final class ExplainViewModel {
 
     @ObservationIgnored private var hasPrewarmed = false
 
-    init(content: ContentService, feedback: any FeedbackService, scheduling: SchedulingService) {
+    init(
+        content: ContentService,
+        feedback: any FeedbackService,
+        scheduling: SchedulingService,
+        conceptID: String? = nil
+    ) {
         self.content = content
         self.feedback = feedback
         self.scheduling = scheduling
+        requestedConceptID = conceptID
         availability = feedback.availability
     }
 
@@ -186,13 +200,33 @@ final class ExplainViewModel {
             return
         }
 
-        guard let snippet = content.nextSnippet(seen: seen) else {
-            state = .failed(ContentError.empty.message)
+        guard let snippet = chooseSnippet(seen: seen) else {
+            state = .failed(
+                requestedConceptID == nil ? ContentError.empty.message : Self.nothingAuthoredMessage
+            )
             return
         }
 
         show(snippet)
         state = .loaded
+    }
+
+    /// Which snippet this pass opens on.
+    ///
+    /// A session the learner asked for is held to the concept they asked for; one the loop
+    /// chose is chosen across the whole ontology. Both rules prefer a snippet the learner has
+    /// not met and fall back to the one they met longest ago, so a revisit is recall rather
+    /// than remembering a specific answer.
+    ///
+    /// What comes *after* a commit is deliberately not scoped this way: the loop continues
+    /// with whatever the ontology says is next, so finishing a deliberate revisit walks the
+    /// learner onward rather than round the same concept.
+    private func chooseSnippet(seen: [String: Date]) -> Snippet? {
+        guard let requestedConceptID else {
+            return content.nextSnippet(seen: seen)
+        }
+
+        return content.nextSnippet(forConceptID: requestedConceptID, seen: seen)
     }
 
     /// Commits the prediction, reveals the ground truth, and asks the model its one question.
@@ -382,6 +416,12 @@ final class ExplainViewModel {
 
     private static let storeUnwritableMessage =
         "This session could not be saved. Nothing has been lost — try committing it again."
+
+    /// A concept the learner asked for that has nothing authored to practise. Its own message
+    /// rather than the empty-content one, because the content is not empty and telling them it
+    /// is would send them looking for a fault that is not there.
+    private static let nothingAuthoredMessage =
+        "There is nothing authored to practise for this concept yet."
 }
 
 private extension String {
