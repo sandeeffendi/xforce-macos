@@ -72,5 +72,9 @@ enum Theme {
         static let explanationEditorHeight: CGFloat = 110
         static let contentMaxWidth: CGFloat = 760
         static let diffMarker: CGFloat = 14
+        static let socraticAnswerEditorHeight: CGFloat = 96
+        static let inspectorMinWidth: CGFloat = 260
+        static let inspectorIdealWidth: CGFloat = 320
+        static let inspectorMaxWidth: CGFloat = 420
     }
 }

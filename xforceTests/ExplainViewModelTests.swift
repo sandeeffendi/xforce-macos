@@ -30,7 +30,7 @@ struct ExplainViewModelTests {
 
     @Test func loadingUnusableContentFailsWithTheReasonRatherThanAnEmptyScreen() {
         let service = ContentService(library: ContentLibrary(concepts: [], snippets: []))
-        let viewModel = ExplainViewModel(content: service)
+        let viewModel = ExplainViewModel(content: service, feedback: FakeFeedbackService())
 
         viewModel.load()
 
@@ -279,7 +279,7 @@ struct ExplainViewModelTests {
 
     private func makeViewModel(expectedOutput: String = "1") -> ExplainViewModel {
         let library = ContentLibrary.fixture(code: "print(1)", expectedOutput: expectedOutput)
-        return ExplainViewModel(content: ContentService(library: library))
+        return ExplainViewModel(content: ContentService(library: library), feedback: FakeFeedbackService())
     }
 
     private func submitCorrectly(_ viewModel: ExplainViewModel) {
