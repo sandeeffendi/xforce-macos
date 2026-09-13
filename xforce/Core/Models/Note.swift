@@ -16,9 +16,10 @@ import SwiftData
 /// A note is written at commit and only at commit. An abandoned session leaves nothing behind,
 /// which is what keeps "not answered yet" and "deliberately skipped" out of the stored record.
 ///
-/// Deliberately absent: the structured feedback, which arrives with the slice that can
-/// produce it, and the concepts this one connects to, which are derivable from the ontology's
-/// own edges rather than worth a second copy that can fall out of step with them.
+/// Deliberately absent: the concepts this one connects to, which are derivable from the
+/// ontology's own edges rather than worth a second copy that can fall out of step with them,
+/// and the missing rubric points, which are the complement of the covered ones over a rubric
+/// that also ships as data. Only what the model actually judged is stored.
 @Model
 final class Note {
 
@@ -46,6 +47,23 @@ final class Note {
     /// stored record uncontaminated by a feedback loop.
     private(set) var socraticAnswer: String?
 
+    /// The numbers of the rubric points the model judged this explanation to have covered.
+    ///
+    /// Empty when there was no model to ask, which is the same thing it records when the model
+    /// judged nothing covered — and the two are told apart by ``socraticQuestion`` being `nil`,
+    /// exactly as a skipped and an unasked question already are.
+    ///
+    /// The missing points are not stored: they are the complement over the concept's authored
+    /// rubric, and storing a second list is what would let the two contradict each other.
+    private(set) var coveredRubricPoints: [Int]
+
+    /// The misconceptions detected in this explanation, as authored ontology ids.
+    ///
+    /// Already filtered to the ones the concept owns, because this is the same set the session
+    /// outcome was derived from. Stored as ids rather than as the generated enum so the record
+    /// survives the enum gaining or losing a case.
+    private(set) var detectedMisconceptionIDs: [String]
+
     /// What the session did to the concept's standing.
     private(set) var outcome: SessionOutcome
 
@@ -60,6 +78,8 @@ final class Note {
         explanation: String,
         socraticQuestion: String? = nil,
         socraticAnswer: String? = nil,
+        coveredRubricPoints: [Int] = [],
+        detectedMisconceptionIDs: [String] = [],
         outcome: SessionOutcome,
         createdAt: Date = .now
     ) {
@@ -69,6 +89,8 @@ final class Note {
         self.explanation = explanation
         self.socraticQuestion = socraticQuestion
         self.socraticAnswer = socraticAnswer
+        self.coveredRubricPoints = coveredRubricPoints
+        self.detectedMisconceptionIDs = detectedMisconceptionIDs
         self.outcome = outcome
         self.createdAt = createdAt
     }

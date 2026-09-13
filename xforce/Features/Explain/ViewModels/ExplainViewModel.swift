@@ -12,9 +12,9 @@ import Observation
 /// is revealed. Nothing here executes Swift: the ground truth is the snippet's authored
 /// `expectedOutput`.
 ///
-/// The state machine now runs end to end, `prompt` through `committed`. The structured
-/// feedback the panel will hold arrives in a later slice and extends the same machine rather
-/// than replacing it.
+/// The state machine runs end to end, `prompt` through `committed`. The panel's content is
+/// built the moment the session's one inference returns and then withheld until the gate
+/// opens — the staging the learner experiences is a display concern, not a second call.
 @MainActor
 @Observable
 final class ExplainViewModel {
@@ -40,6 +40,10 @@ final class ExplainViewModel {
 
     /// How the session's one inference is going.
     private(set) var generation: FeedbackGeneration = .idle
+
+    /// The panel's content, built when the inference returns and held back until the gate
+    /// opens. Read through ``structuredFeedback``, never directly.
+    private var judged: StructuredFeedback?
 
     /// The in-flight inference. Kept so the learner can stop a slow one; a test borrows the
     /// same handle to await the call rather than polling for it.
@@ -104,6 +108,32 @@ final class ExplainViewModel {
 
     /// The question the model asked, when it managed to ask one.
     var socraticQuestion: String? { generation.question }
+
+    /// The feedback panel's content, or `nil` while the gate is shut.
+    ///
+    /// Derived from the phase for the same reason ``expectedOutput`` is: there is no property
+    /// a view could read to open the panel early, so the gate cannot be circumvented by a
+    /// control that forgets to check it. The content itself has existed since the inference
+    /// returned — withholding it is the whole staging the learner experiences.
+    var structuredFeedback: StructuredFeedback? {
+        phase.isFeedbackUnlocked ? judged : nil
+    }
+
+    /// The concepts the current one connects to, for the panel's "connect this" section.
+    ///
+    /// Read from the ontology's own authored `prerequisites` and `related` edges and from
+    /// nothing else — the model is never asked which concepts relate to which, because a small
+    /// on-device model choosing among a handful of them adds noise rather than signal. That is
+    /// why this hangs off the concept rather than off ``structuredFeedback``: the section is
+    /// there on a Mac with no Apple Intelligence, and on one whose generation failed.
+    ///
+    /// Gated on the phase for the same reason everything else in the panel is, so there is no
+    /// property a view could read to open part of the panel early.
+    var connectedConcepts: [Concept] {
+        guard phase.isFeedbackUnlocked, let concept else { return [] }
+
+        return content.neighbours(of: concept)
+    }
 
     /// Whether the model is working, so a pause does not read as a freeze.
     var isGenerating: Bool { generation.isRunning }
@@ -234,6 +264,7 @@ final class ExplainViewModel {
                     explanation: explanation
                 )
                 guard Task.isCancelled == false else { return }
+                judged = StructuredFeedback(concept: concept, feedback: result)
                 generation = .asked(result.socraticQuestion)
                 advance(to: .socratic)
             } catch is CancellationError {
@@ -279,6 +310,9 @@ final class ExplainViewModel {
     func commit() {
         guard canCommit, let snippet, let outcome else { return }
 
+        // Read from what was judged rather than from what the model said, so a misconception
+        // belonging to another concept cannot reach the schedule after being filtered out of
+        // the panel. A session with no model to ask judged nothing, which grades as clean.
         let note = Note(
             conceptID: snippet.conceptID,
             snippetID: snippet.id,
@@ -286,7 +320,9 @@ final class ExplainViewModel {
             explanation: explanation,
             socraticQuestion: socraticQuestion,
             socraticAnswer: socraticResponse?.storedAnswer,
-            outcome: outcome.sessionOutcome
+            coveredRubricPoints: judged?.covered.map(\.number) ?? [],
+            detectedMisconceptionIDs: judged?.misconceptions.map(\.id) ?? [],
+            outcome: outcome.sessionOutcome(misconceptionDetected: judged?.hasMisconception == true)
         )
 
         do {
@@ -318,6 +354,7 @@ final class ExplainViewModel {
         socraticResponse = nil
         generation = .idle
         generationTask = nil
+        judged = nil
         diff = nil
         outcome = nil
         progress = nil

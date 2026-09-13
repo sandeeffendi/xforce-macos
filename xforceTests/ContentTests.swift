@@ -86,6 +86,35 @@ struct ContentIntegrityTests {
         }
     }
 
+    /// Edge resolution and self-reference are asserted by `ContentGraphIntegrityTests` below,
+    /// which owns the authored edges. The panel's "connect this" section reads the same two
+    /// fields, so it is covered by the same guarantee rather than by a second copy of it.
+    @Test func misconceptionIdsAreUniqueAcrossTheWholeOntology() {
+        let service = ContentService()
+        let ids = service.concepts.flatMap { $0.misconceptions.map(\.id) }
+
+        #expect(Set(ids).count == ids.count, "two concepts share a misconception id")
+    }
+
+    /// The one guarantee that replaces a build script. The enum is hand-written and committed,
+    /// so nothing keeps it in step with the ontology except this: an id authored into the
+    /// content with no case, or a case with no id, fails the build rather than the learner.
+    @Test func theMisconceptionEnumMatchesTheOntologyInBothDirections() {
+        let service = ContentService()
+        let authored = Set(service.concepts.flatMap { $0.misconceptions.map(\.id) })
+        let generable = Set(MisconceptionID.allCases.map(\.rawValue))
+
+        #expect(
+            authored.subtracting(generable).isEmpty,
+            "the ontology authors misconceptions the enum has no case for: \(authored.subtracting(generable).sorted())"
+        )
+        #expect(
+            generable.subtracting(authored).isEmpty,
+            "the enum carries cases the ontology no longer authors: \(generable.subtracting(authored).sorted())"
+        )
+        #expect(authored == generable)
+    }
+
     private func trimmedTrailing(_ line: String) -> String {
         var line = line
         while let last = line.last, last.isWhitespace {

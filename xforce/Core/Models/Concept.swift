@@ -76,8 +76,8 @@ nonisolated struct RubricPoint: Identifiable, Hashable, Codable, Sendable {
 
 /// A wrong belief a learner may hold about a concept, paired with what replaces it.
 ///
-/// Authored data for now. The closed generated type that constrains what a model may report
-/// arrives with the feedback slice, which is the first requirement that needs one.
+/// Authored data. What a model may report about it is constrained separately, by
+/// ``MisconceptionID`` — a closed generated type whose raw values are these ``id``s.
 nonisolated struct Misconception: Identifiable, Hashable, Codable, Sendable {
     let id: String
     let name: String

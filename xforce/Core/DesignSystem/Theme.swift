@@ -55,6 +55,12 @@ enum Theme {
         /// The line between two concepts on the graph. A separator colour is too faint for a
         /// line that carries information rather than merely dividing two regions.
         static let graphEdge = SwiftUI.Color(nsColor: .secondaryLabelColor)
+
+        /// The wash behind anything the model wrote, and never behind anything the learner
+        /// wrote. Authored for both appearances for the same reason the mismatch wash is: a
+        /// tint that is legible on white is not automatically legible on near-black, and this
+        /// one carries meaning rather than decoration.
+        static let modelSurface = SwiftUI.Color.modelSurface
     }
 
     enum Spacing {
@@ -110,5 +116,9 @@ enum Theme {
         static let graphEdgeWidth: CGFloat = 1.5
         static let graphDash: CGFloat = 4
         static let masterySwatch: CGFloat = 12
+
+        /// The symbol column in front of a rubric point, held at a fixed width so covered and
+        /// missing rows start at the same place and the list reads as one column.
+        static let feedbackMarker: CGFloat = 16
     }
 }
