@@ -46,7 +46,6 @@ struct ConceptInspector: View {
             .padding(Theme.Spacing.large)
         }
         .background(Theme.Color.windowBackground)
-        .accessibilityLabel("Your notes on \(concept.name)")
     }
 
     private var header: some View {
@@ -186,8 +185,7 @@ private struct NoteEntryCard: View {
                     .foregroundStyle(Theme.Color.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
-                Image(systemName: entry.outcome.historySymbol)
-                    .foregroundStyle(entry.outcome.historyTint)
+                SessionOutcomeSymbol(outcome: entry.outcome)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -281,6 +279,36 @@ private struct CodeBlock: View {
     }
 }
 
+/// The mark one session outcome is drawn as.
+///
+/// One view rather than a symbol and a tint that travel separately, for the same reason the
+/// practice screen's `OutcomeSymbol` is one: the two halves of a mark cannot disagree if they
+/// cannot be used apart. Colour never carries the meaning alone — the words beside it do.
+private struct SessionOutcomeSymbol: View {
+    let outcome: SessionOutcome
+
+    var body: some View {
+        Image(systemName: symbol)
+            .foregroundStyle(tint)
+    }
+
+    private var symbol: String {
+        switch outcome {
+        case .mastered: "checkmark.circle.fill"
+        case .fragile: "exclamationmark.circle.fill"
+        case .failed: "xmark.circle.fill"
+        }
+    }
+
+    private var tint: Color {
+        switch outcome {
+        case .mastered: Theme.Color.success
+        case .fragile: Theme.Color.brand
+        case .failed: Theme.Color.failure
+        }
+    }
+}
+
 private extension SessionOutcome {
 
     /// What the session did, in words. The history is read long after the session, so "box
@@ -290,22 +318,6 @@ private extension SessionOutcome {
         case .mastered: "Predicted correctly"
         case .fragile: "Correct, with a misconception showing"
         case .failed: "Prediction did not match"
-        }
-    }
-
-    var historySymbol: String {
-        switch self {
-        case .mastered: "checkmark.circle.fill"
-        case .fragile: "exclamationmark.circle.fill"
-        case .failed: "xmark.circle.fill"
-        }
-    }
-
-    var historyTint: Color {
-        switch self {
-        case .mastered: Theme.Color.success
-        case .fragile: Theme.Color.brand
-        case .failed: Theme.Color.failure
         }
     }
 }

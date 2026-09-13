@@ -57,11 +57,4 @@ nonisolated struct NoteEntry: Identifiable, Hashable, Sendable {
     let reading: StructuredFeedback?
 
     var id: Int { order }
-
-    /// Whether a question was asked at all.
-    var wasAsked: Bool { socraticQuestion != nil }
-
-    /// Whether the learner was asked and declined to answer. An answer that happens to be
-    /// empty is still an answer, which is why this reads the stored `nil` rather than the text.
-    var didSkip: Bool { wasAsked && socraticAnswer == nil }
 }

@@ -131,8 +131,10 @@ struct ConceptNoteHistoryTests {
 
         viewModel.select("optionals")
 
-        #expect(viewModel.history.map(\.wasAsked) == [true, true])
-        #expect(viewModel.history.map(\.didSkip) == [true, false])
+        // Both were asked. The first declined to answer and stored nothing; the second
+        // answered with an empty field, which is still an answer.
+        #expect(viewModel.history.map(\.socraticQuestion) == ["Why?", "Why?"])
+        #expect(viewModel.history.map(\.socraticAnswer) == [nil, ""])
     }
 
     /// A session committed on a Mac with no model judged nothing. Rendering that as a rubric
@@ -151,7 +153,7 @@ struct ConceptNoteHistoryTests {
         viewModel.select("optionals")
         let entry = try #require(viewModel.history.first)
 
-        #expect(entry.wasAsked == false)
+        #expect(entry.socraticQuestion == nil)
         #expect(entry.reading == nil)
     }
 

@@ -123,9 +123,9 @@ final class GraphViewModel {
         edges = ConceptEdge.edges(in: content.concepts)
         state = .loaded
 
-        // The screen loads on every appearance, which includes coming back from the session
-        // the inspector just started. Rereading the history here is what makes that session
-        // show up in it rather than the learner having to reselect the concept.
+        // Whenever the map is rebuilt, what the inspector is showing is rebuilt with it. A
+        // history left over from the previous build would be the one part of the screen not
+        // saying what the store currently holds.
         refreshHistory()
     }
 
@@ -153,7 +153,14 @@ final class GraphViewModel {
     /// The reading is rebuilt through the same type the live panel uses, from the numbers and
     /// ids the note stored, so the history and the practice screen cannot come to different
     /// conclusions about the same session. A note that was never read by a model carries no
-    /// reading at all rather than an empty one — the stored question is what tells those apart.
+    /// reading at all rather than an empty one.
+    ///
+    /// Whether a model read the session is read off the stored question rather than off a flag
+    /// of its own, because that is the rule ``Note`` states: an empty list of covered points
+    /// "is the same thing it records when the model judged nothing covered — and the two are
+    /// told apart by `socraticQuestion` being `nil`". The loop writes both in one place at one
+    /// moment, so they cannot come apart; a change that ever asked the model for a judgement
+    /// without a question would have to give the record a fact of its own instead.
     private func entry(order: Int, note: Note, concept: Concept) -> NoteEntry {
         let snippet = content.snippet(withID: note.snippetID)
 
