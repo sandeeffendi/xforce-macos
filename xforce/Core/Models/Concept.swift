@@ -21,6 +21,21 @@ nonisolated struct Concept: Identifiable, Hashable, Codable, Sendable {
     /// A short frame for the learner's explanation. Deliberately not the answer.
     let summary: String
 
+    /// Where this concept is drawn on the graph. Authored, not computed.
+    let position: ConceptPosition
+
+    /// The concepts that have to be understood before this one, by id.
+    ///
+    /// Also the ontology's authoring order: a concept is authored after everything it names
+    /// here, which is the same order snippet selection walks.
+    let prerequisites: [String]
+
+    /// The concepts that illuminate this one without being required first, by id.
+    ///
+    /// Authored rather than inferred. The graph draws its edges from these two fields and
+    /// nothing else — no embeddings, no similarity, no model.
+    let related: [String]
+
     /// The points a complete explanation of this concept would cover, numbered from one.
     ///
     /// The numbering is what later lets covered points be reported as integers and the
@@ -29,6 +44,26 @@ nonisolated struct Concept: Identifiable, Hashable, Codable, Sendable {
 
     /// The curated wrong beliefs a learner may hold about this concept.
     let misconceptions: [Misconception]
+}
+
+/// Where a concept sits on the graph, in unit coordinates.
+///
+/// Both axes run `0...1` across whatever space the graph is given, with `y` increasing
+/// downward the way screen coordinates do. Unit coordinates rather than points because an
+/// authored layout should not have to know how large the window is.
+///
+/// The layout is authored rather than produced by a force-directed simulation. The ontology
+/// is fixed and small, so a simulation would need a stepping loop, stable seeding and overlap
+/// handling for no gain — and positions that never move are what let the graph become a map
+/// the learner can hold in their head.
+nonisolated struct ConceptPosition: Hashable, Codable, Sendable {
+    let x: Double
+    let y: Double
+
+    /// The coordinate space both axes live in. The content integrity suite holds every
+    /// authored position to it, because a coordinate outside this range is a node drawn off
+    /// the edge of the graph.
+    static let unitRange: ClosedRange<Double> = 0...1
 }
 
 /// One numbered point of a concept's rubric.

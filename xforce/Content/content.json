@@ -4,6 +4,9 @@
       "id": "optionals",
       "name": "Optionals",
       "summary": "An optional is a type that either holds a value or holds nothing at all. Swift makes that possibility part of the type, so the absence has to be dealt with before the value can be used.",
+      "position": { "x": 0.5, "y": 0.5 },
+      "prerequisites": [],
+      "related": [],
       "rubric": [
         {
           "number": 1,
