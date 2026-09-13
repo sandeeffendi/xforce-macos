@@ -140,6 +140,65 @@ struct ContentServiceValidationTests {
     }
 }
 
+/// The part of the authoring contract the graph depends on.
+///
+/// Positions and edges are authored by hand, so the slips they invite — two concepts drawn on
+/// top of each other, an edge pointing at a concept that was renamed — are slips no compiler
+/// catches. They fail the build here rather than reaching a learner as an unreadable map.
+@MainActor
+struct ContentGraphIntegrityTests {
+
+    @Test func everyConceptCarriesAPositionInsideTheUnitSquare() {
+        let service = ContentService()
+
+        for concept in service.concepts {
+            #expect(ConceptPosition.unitRange.contains(concept.position.x), "\(concept.id) sits outside on x")
+            #expect(ConceptPosition.unitRange.contains(concept.position.y), "\(concept.id) sits outside on y")
+        }
+    }
+
+    @Test func noTwoConceptsAreAuthoredOnTopOfEachOther() {
+        let service = ContentService()
+
+        let positions = Set(service.concepts.map(\.position))
+        #expect(positions.count == service.concepts.count, "two concepts share a position")
+    }
+
+    @Test func everyPrerequisiteAndRelatedIDResolvesToAConceptThatShips() {
+        let service = ContentService()
+        let conceptIDs = Set(service.concepts.map(\.id))
+
+        for concept in service.concepts {
+            for neighbour in concept.prerequisites + concept.related {
+                #expect(conceptIDs.contains(neighbour), "\(concept.id) points at unknown concept \(neighbour)")
+            }
+        }
+    }
+
+    @Test func noConceptNamesItselfAsAPrerequisiteOrAsRelated() {
+        let service = ContentService()
+
+        for concept in service.concepts {
+            #expect(concept.prerequisites.contains(concept.id) == false, "\(concept.id) is its own prerequisite")
+            #expect(concept.related.contains(concept.id) == false, "\(concept.id) is related to itself")
+        }
+    }
+
+    /// The same authoring order snippet selection already leans on, now stated where it can be
+    /// checked: no concept is authored before something it depends on.
+    @Test func prerequisitesAreAuthoredBeforeTheConceptsThatNeedThem() {
+        let service = ContentService()
+        var seen: Set<String> = []
+
+        for concept in service.concepts {
+            for prerequisite in concept.prerequisites {
+                #expect(seen.contains(prerequisite), "\(concept.id) needs \(prerequisite), authored after it")
+            }
+            seen.insert(concept.id)
+        }
+    }
+}
+
 extension ContentLibrary {
 
     /// A minimal library that satisfies the service's validation rules, so a test can change
@@ -156,6 +215,9 @@ extension ContentLibrary {
                     id: conceptID,
                     name: "Optionals",
                     summary: "A value that may be absent.",
+                    position: ConceptPosition(x: 0.5, y: 0.5),
+                    prerequisites: [],
+                    related: [],
                     rubric: [RubricPoint(number: 1, text: "An optional either holds a value or holds nil.")],
                     misconceptions: [
                         Misconception(

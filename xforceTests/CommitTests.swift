@@ -581,8 +581,13 @@ extension ContentLibrary {
     static func practiceFixture() -> ContentLibrary {
         ContentLibrary(
             concepts: [
-                fixtureConcept(id: "variables", name: "Variables"),
-                fixtureConcept(id: "optionals", name: "Optionals"),
+                fixtureConcept(id: "variables", name: "Variables", position: ConceptPosition(x: 0.3, y: 0.5)),
+                fixtureConcept(
+                    id: "optionals",
+                    name: "Optionals",
+                    position: ConceptPosition(x: 0.7, y: 0.5),
+                    prerequisites: ["variables"]
+                ),
             ],
             snippets: [
                 Snippet(id: "variables-1", conceptID: "variables", code: "print(1)", expectedOutput: "1"),
@@ -595,11 +600,19 @@ extension ContentLibrary {
         )
     }
 
-    private static func fixtureConcept(id: String, name: String) -> Concept {
+    private static func fixtureConcept(
+        id: String,
+        name: String,
+        position: ConceptPosition,
+        prerequisites: [String] = []
+    ) -> Concept {
         Concept(
             id: id,
             name: name,
             summary: "A short frame for \(name.lowercased()).",
+            position: position,
+            prerequisites: prerequisites,
+            related: [],
             rubric: [RubricPoint(number: 1, text: "Something a complete explanation would say.")],
             misconceptions: [
                 Misconception(
