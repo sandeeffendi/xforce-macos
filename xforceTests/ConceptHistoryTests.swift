@@ -268,6 +268,23 @@ struct ConceptRevisitTests {
         let viewModel = try graphViewModel()
 
         #expect(viewModel.sessionRoute == nil)
+        #expect(viewModel.startSession() == nil)
+    }
+
+    /// The practice screen's own inspector is the gate, and the lock has to be seen. Letting
+    /// the map's inspector go as the session starts is what keeps the two from being presented
+    /// over each other.
+    @Test func startingASessionLetsTheMapsInspectorGo() throws {
+        let viewModel = try graphViewModel(notes: [
+            historyNote(conceptID: "optionals", snippetID: "optionals-1", at: .fixture(day: 1))
+        ])
+        viewModel.select("optionals")
+
+        let route = viewModel.startSession()
+
+        #expect(route == .session(conceptID: "optionals"))
+        #expect(viewModel.isInspectorPresented == false)
+        #expect(viewModel.history.isEmpty)
     }
 
     /// Recalling rather than remembering a specific answer: a revisit goes to a snippet the

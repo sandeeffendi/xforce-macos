@@ -335,7 +335,7 @@ private struct ConceptInspectorPreview: View {
 
     var body: some View {
         ConceptInspector(concept: .preview, history: history, onStartSession: {})
-            .frame(width: Theme.Size.inspectorIdealWidth, height: 600)
+            .frame(width: Theme.Size.inspectorIdealWidth)
     }
 }
 

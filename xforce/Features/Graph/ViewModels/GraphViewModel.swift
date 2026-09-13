@@ -81,6 +81,21 @@ final class GraphViewModel {
         history = []
     }
 
+    /// The learner asking for a session on the selected concept.
+    ///
+    /// The selection is let go as the route is handed back, so the map's inspector is never
+    /// presented at the same time as the practice screen's. That matters more than it sounds:
+    /// the practice screen's inspector *is* the gate, and the lock has to be seen for the
+    /// constraint to read as intentional rather than as a broken app.
+    ///
+    /// - Returns: where to go, or `nil` when nothing is selected.
+    func startSession() -> AppRoute? {
+        guard let route = sessionRoute else { return nil }
+
+        clearSelection()
+        return route
+    }
+
     /// Reads the ontology and the learner's progress and rebuilds the map.
     ///
     /// Safe to run again: the same content and the same store produce the same nodes in the

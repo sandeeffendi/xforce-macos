@@ -99,7 +99,7 @@ private struct GraphScreenContent: View {
     /// Pushes the route the view model named. The practice screen it resolves to starts where
     /// every pass through the loop starts, so the gate arrives with it.
     private func startSession() {
-        guard let route = viewModel.sessionRoute else { return }
+        guard let route = viewModel.startSession() else { return }
 
         router.navigate(to: route)
     }
