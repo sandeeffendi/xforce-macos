@@ -15,9 +15,10 @@ import SwiftUI
 /// Every later screen follows the same pattern.
 struct ExplainScreen: View {
     @Environment(ContentService.self) private var content
+    @Environment(\.feedback) private var feedback
 
     var body: some View {
-        ExplainScreenContent(content: content)
+        ExplainScreenContent(content: content, feedback: feedback)
     }
 }
 
@@ -28,8 +29,8 @@ private struct ExplainScreenContent: View {
     ///   established, so a service instance replaced later would not reach the view model.
     ///   Services are created once in `XforceApp` and never replaced, so that cannot happen
     ///   today; a change to service lifetime has to revisit this.
-    init(content: ContentService) {
-        _viewModel = State(initialValue: ExplainViewModel(content: content))
+    init(content: ContentService, feedback: any FeedbackService) {
+        _viewModel = State(initialValue: ExplainViewModel(content: content, feedback: feedback))
     }
 
     var body: some View {
@@ -55,6 +56,29 @@ private struct ExplainScreenContent: View {
         .background(Theme.Color.windowBackground)
         .navigationTitle(AppSection.explain.title)
         .task { viewModel.load() }
+        .inspector(isPresented: feedbackPresented) {
+            FeedbackInspector(
+                isLocked: viewModel.isFeedbackLocked,
+                phase: viewModel.phase,
+                generation: viewModel.generation
+            )
+            .inspectorColumnWidth(
+                min: Theme.Size.inspectorMinWidth,
+                ideal: Theme.Size.inspectorIdealWidth,
+                max: Theme.Size.contentMaxWidth
+            )
+        }
+    }
+
+    /// The gate, expressed exactly once.
+    ///
+    /// Reading it derives the panel's presentation from the loop; writing it does nothing at
+    /// all. That empty setter is the point: the inspector does not answer to a control, so
+    /// there is no control anywhere that can open the feedback early, and none can be added
+    /// by accident later. What the panel *contains* is derived from the phase in the same
+    /// way, which is why the gate is one value rather than a scattering of `.disabled`.
+    private var feedbackPresented: Binding<Bool> {
+        Binding(get: { viewModel.isInspectorVisible }, set: { _ in })
     }
 
     @ViewBuilder
@@ -78,8 +102,12 @@ private struct ExplainScreenContent: View {
                 )
             }
 
-            if viewModel.isFeedbackLocked {
-                LockedFeedbackNotice(hasRevealed: viewModel.phase >= .reveal)
+            if viewModel.isGenerating {
+                GeneratingNotice(cancel: viewModel.cancelGenerating)
+            }
+
+            if viewModel.phase == .socratic, let question = viewModel.socraticQuestion {
+                socraticFields(question: question)
             }
         }
         .frame(maxWidth: Theme.Size.contentMaxWidth, alignment: .leading)
@@ -130,6 +158,43 @@ private struct ExplainScreenContent: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.canSubmit == false)
+        }
+    }
+
+    /// The question, alone. The feedback is still locked behind it, which is what makes the
+    /// question real rather than rhetorical.
+    @ViewBuilder
+    private func socraticFields(question: String) -> some View {
+        @Bindable var viewModel = viewModel
+
+        VStack(alignment: .leading, spacing: Theme.Spacing.large) {
+            SocraticQuestionCard(question: question)
+
+            TextEditor(text: $viewModel.socraticAnswer)
+                .font(Theme.Font.body)
+                .scrollContentBackground(.hidden)
+                .padding(Theme.Spacing.small)
+                .frame(height: Theme.Size.socraticAnswerEditorHeight)
+                .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.medium)
+                        .strokeBorder(Theme.Color.separator)
+                )
+                .accessibilityLabel("Your answer to the question")
+
+            HStack(spacing: Theme.Spacing.medium) {
+                Button("Answer") {
+                    viewModel.answer()
+                }
+                .buttonStyle(.borderedProminent)
+
+                // Never disabled: a loop that traps the learner is worse than an unanswered
+                // question, and a skip is recorded as its own thing rather than as silence.
+                Button("Nothing to add") {
+                    viewModel.skip()
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 }
@@ -349,29 +414,120 @@ private struct DiffRow: View {
     }
 }
 
-/// Story 13: the constraint has to read as intentional rather than as a broken app.
-private struct LockedFeedbackNotice: View {
-    let hasRevealed: Bool
+/// The model asking, not telling. Marked as the model's words so the learner never
+/// misremembers them as their own.
+private struct SocraticQuestionCard: View {
+    let question: String
 
     var body: some View {
-        Label {
-            Text(message)
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            Label("A question about your reasoning", systemImage: "sparkles")
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.secondaryText)
+
+            Text(question)
+                .font(Theme.Font.sectionTitle)
+                .foregroundStyle(Theme.Color.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
-        } icon: {
-            Image(systemName: "lock.fill")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.medium)
+        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.medium)
+                .strokeBorder(Theme.Color.brand)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("A question about your reasoning. \(question)")
+    }
+}
+
+/// Stories 34 and 35: a pause has to read as work rather than as a freeze, and it has to be
+/// stoppable.
+private struct GeneratingNotice: View {
+    let cancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.medium) {
+            ProgressView()
+                .controlSize(.small)
+
+            Text("Reading your reasoning…")
+                .font(Theme.Font.caption)
                 .foregroundStyle(Theme.Color.secondaryText)
+
+            Spacer()
+
+            Button("Stop", action: cancel)
+                .buttonStyle(.bordered)
         }
         .padding(Theme.Spacing.medium)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
     }
+}
 
+/// Stories 13 and 14: the panel is on screen for the whole loop, and what it holds is
+/// decided by the phase rather than by anything the learner can press. The constraint has to
+/// read as intentional rather than as a broken app, which it cannot do if it is invisible.
+private struct FeedbackInspector: View {
+    let isLocked: Bool
+    let phase: LoopPhase
+    let generation: FeedbackGeneration
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+                Label {
+                    Text("Feedback")
+                        .font(Theme.Font.sectionTitle)
+                        .foregroundStyle(Theme.Color.primaryText)
+                } icon: {
+                    Image(systemName: isLocked ? "lock.fill" : "lock.open.fill")
+                        .foregroundStyle(Theme.Color.secondaryText)
+                }
+
+                Text(message)
+                    .font(Theme.Font.body)
+                    .foregroundStyle(Theme.Color.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Theme.Spacing.large)
+        }
+        .background(Theme.Color.windowBackground)
+        .accessibilityLabel(isLocked ? "Feedback, locked" : "Feedback")
+    }
+
+    /// What the model did takes precedence over where the loop is, because a learner whose
+    /// Mac has no model needs to be told that and not told to keep going.
     private var message: String {
-        hasRevealed
-            ? "Feedback on your reasoning is still locked. It arrives once the questioning step is built."
-            : "Feedback is locked until you commit to an output and a reason. Working it out yourself is the part that does the learning."
+        switch generation {
+        case .idle, .asked:
+            phaseMessage
+        case .running:
+            "The model is reading your reasoning. The feedback stays locked until you have been asked about it and have answered."
+        case .cancelled:
+            "You stopped the question before it arrived, so there is nothing to show here. Nothing else in the loop is affected."
+        case .unavailable(let availability):
+            availability.message ?? phaseMessage
+        case .failed(let explanation):
+            explanation
+        }
+    }
+
+    private var phaseMessage: String {
+        switch phase {
+        case .prompt:
+            "Locked until you commit to an output and a reason. Working it out yourself is the part that does the learning."
+        case .reveal:
+            "Locked until you have been asked about your reasoning and have answered."
+        case .socratic:
+            "Answer the question or say you have nothing to add, and this unlocks."
+        case .feedback, .committed:
+            "Unlocked. Which rubric points your explanation covered, what it missed and any misconception it showed arrive once the feedback step is built."
+        }
     }
 }
 
