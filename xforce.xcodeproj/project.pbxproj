@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		D30F5C9C3056EEB500EE70B7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D30F5C7C3053B76B00EE70B7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D30F5C833053B76B00EE70B7;
+			remoteInfo = xforce;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		D30F5C843053B76B00EE70B7 /* xforce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = xforce.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D30F5C983056EEB500EE70B7 /* xforceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = xforceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = xforce;
 			sourceTree = "<group>";
 		};
+		D30F5C993056EEB500EE70B7 /* xforceTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = xforceTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D30F5C813053B76B00EE70B7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D30F5C953056EEB500EE70B7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				D30F5C863053B76B00EE70B7 /* xforce */,
+				D30F5C993056EEB500EE70B7 /* xforceTests */,
 				D30F5C853053B76B00EE70B7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				D30F5C843053B76B00EE70B7 /* xforce.app */,
+				D30F5C983056EEB500EE70B7 /* xforceTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = D30F5C843053B76B00EE70B7 /* xforce.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D30F5C973056EEB500EE70B7 /* xforceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D30F5C9E3056EEB500EE70B7 /* Build configuration list for PBXNativeTarget "xforceTests" */;
+			buildPhases = (
+				D30F5C943056EEB500EE70B7 /* Sources */,
+				D30F5C953056EEB500EE70B7 /* Frameworks */,
+				D30F5C963056EEB500EE70B7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D30F5C9D3056EEB500EE70B7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D30F5C993056EEB500EE70B7 /* xforceTests */,
+			);
+			name = xforceTests;
+			packageProductDependencies = (
+			);
+			productName = xforceTests;
+			productReference = D30F5C983056EEB500EE70B7 /* xforceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					D30F5C833053B76B00EE70B7 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					D30F5C973056EEB500EE70B7 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = D30F5C833053B76B00EE70B7;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				D30F5C833053B76B00EE70B7 /* xforce */,
+				D30F5C973056EEB500EE70B7 /* xforceTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D30F5C823053B76B00EE70B7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D30F5C963056EEB500EE70B7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D30F5C943056EEB500EE70B7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D30F5C9D3056EEB500EE70B7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D30F5C833053B76B00EE70B7 /* xforce */;
+			targetProxy = D30F5C9C3056EEB500EE70B7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D30F5C8F3053B76B00EE70B7 /* Debug */ = {
@@ -258,6 +333,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				EXCLUDED_SOURCE_FILE_NAMES = ".gitkeep";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -273,7 +349,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -290,6 +366,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				EXCLUDED_SOURCE_FILE_NAMES = ".gitkeep";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -305,7 +382,47 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D30F5C9F3056EEB500EE70B7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FJ9UDU5R7B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.verysuccessfulcompany.xforceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/xforce.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/xforce";
+			};
+			name = Debug;
+		};
+		D30F5CA03056EEB500EE70B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FJ9UDU5R7B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.verysuccessfulcompany.xforceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/xforce.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/xforce";
 			};
 			name = Release;
 		};
@@ -326,6 +443,15 @@
 			buildConfigurations = (
 				D30F5C923053B76B00EE70B7 /* Debug */,
 				D30F5C933053B76B00EE70B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D30F5C9E3056EEB500EE70B7 /* Build configuration list for PBXNativeTarget "xforceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D30F5C9F3056EEB500EE70B7 /* Debug */,
+				D30F5CA03056EEB500EE70B7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
