@@ -1,7 +1,8 @@
 # System Design
 
-Status: **scaffolding**. Product requirements are not defined yet. This document describes
-the skeleton that exists today and, just as importantly, what is deliberately missing.
+Status: **scaffolding, with v1 requirements locked**. This document describes the skeleton
+that exists today and, just as importantly, what is deliberately missing. What v1 adds and why
+is recorded in [product-requirements.md](./product-requirements.md).
 
 ## Layers
 
@@ -24,6 +25,9 @@ the skeleton that exists today and, just as importantly, what is deliberately mi
 │                                                              │
 │  DesignSystem: Theme tokens, shared components               │
 │  ViewState:    idle | loading | loaded | failed              │
+│                                                              │
+│  Models:       Concept, Snippet, Note, ConceptProgress       │
+│  Services:     content, scheduling, feedback                 │
 └─────────────────────────────┬────────────────────────────────┘
                               │
 ┌─────────────────────────────▼────────────────────────────────┐
@@ -34,7 +38,7 @@ the skeleton that exists today and, just as importantly, what is deliberately mi
 │    ViewModels/ @MainActor @Observable                        │
 │       │                                ▲                     │
 │       ▼                                │                     │
-│    Models/     plain Swift domain types                      │
+│    Models/     screen-specific types (e.g. loop phase)       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -70,13 +74,26 @@ It exists so spacing and radius are consistent and greppable, not to enable cust
 
 ## Deliberately absent
 
+Each row below named a missing layer and the trigger that would introduce it. Three of those
+triggers have now fired: v1's requirements are locked, so domain models, persistence and services
+arrive with this milestone. They are listed first, naming what replaces them.
+
+### No longer absent — arriving in v1
+
+| Was not here | What replaces it |
+| --- | --- |
+| Domain models | `Concept`, `Rubric`, `Misconception` and `Snippet` decoded from read-only bundle JSON, plus the `Note` and `ConceptProgress` records. They live in the **core** layer, not `Features/<Feature>/Models/`, because both the practice feature and the graph feature need them and features may not import each other. Feature-local `Models/` keeps only screen-specific types such as the loop phase. |
+| Persistence (SwiftData) | `Note` and `ConceptProgress` as `@Model` types in one container created in `XforceApp` and injected with `.modelContainer(_:)`. It is the single source of truth for user data — there is no second store, and the ontology and snippets stay read-only bundle data that is never written at runtime. |
+| Services / repositories | `Core/Services/`, holding three services: one that loads and validates the bundled content, one that computes Leitner transitions, and one that produces feedback. Each is injected individually through `@Environment`, the way `Router` already is. Only the feedback service gets a protocol, because the tests need a second conformance; the rule against protocols with one conformance rules the other two out. |
+
+### Still deliberately absent
+
 | Not here | Add it when |
 | --- | --- |
-| Domain models | Product requirements exist. They go in `Features/<Feature>/Models/`. |
-| Persistence (SwiftData) | There is a model worth storing. Container is created in `XforceApp` and injected with `.modelContainer(_:)`. |
-| Services / repositories | A view model needs data it cannot own. Then `Core/Services/` and environment injection. |
-| Dependency-injection container | More than one service exists. Until then `@Environment` is enough. |
+| Dependency-injection container | Injecting services individually stops scaling. Three environment-injected services is not that point — `@Environment` is still enough. |
 | Deep linking (`AppRoute ⟷ URL`) | Something outside the app needs to drive navigation. See `AGENTS.md`. |
+| Executing Swift at runtime | Never. Ground truth comes from `expectedOutput` computed at authoring time and shipped as data. |
 
 Removing these is the point: each has a clear seam and a clear trigger, so adding one later
-is additive rather than a refactor.
+is additive rather than a refactor. The three rows that moved up are the proof — each arrives
+where its seam always said it would.

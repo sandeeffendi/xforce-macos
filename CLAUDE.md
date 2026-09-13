@@ -7,5 +7,7 @@ folder layout, naming, navigation rules, theming, and the test workflow.
 
 Supporting documents:
 
+- [docs/product-requirements.md](./docs/product-requirements.md) — what v1 is, what it is
+  not, and the decisions that are settled together with the reasoning behind them.
 - [docs/system-design.md](./docs/system-design.md) — layers, data flow, and what is
   deliberately absent from the codebase right now.

@@ -5,6 +5,11 @@ Working agreement for anyone — human or agent — writing code in `xforce`.
 `xforce` is a native macOS app (SwiftUI, macOS 26.5+, Swift 6 language mode) built with
 MVVM and a feature-based folder structure.
 
+This file governs *how* code is written. What the app is for, what v1 covers and what it
+deliberately leaves out is in [docs/product-requirements.md](./docs/product-requirements.md);
+the layer map and the seams not yet filled are in
+[docs/system-design.md](./docs/system-design.md).
+
 ## Prime directive
 
 **Do not over-engineer.** Every abstraction must be justified by a requirement that exists
@@ -122,11 +127,15 @@ Tests use **Swift Testing** (`import Testing`, `@Test`, `#expect`) in the `xforc
 target. Test-driven: write the failing test first, watch it fail, then implement.
 
 ```sh
-xcodebuild -project xforce.xcodeproj -scheme xforce build
-xcodebuild -project xforce.xcodeproj -scheme xforce test
+xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/DerivedData build
+xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/DerivedData test
 ```
 
 Never report a change as working without running both.
+
+`-derivedDataPath` is required, not optional. Work happens in several git worktrees at once,
+and without it they all contend on one shared derived data directory. `.build/` is already
+gitignored, so building this way leaves the tree clean.
 
 ## Xcode project
 
