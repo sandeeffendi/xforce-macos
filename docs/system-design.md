@@ -72,6 +72,67 @@ appearance variants, so light and dark are correct by construction.
 `Theme` is a namespace of static tokens (colors, spacing, radius, fonts), not runtime state.
 It exists so spacing and radius are consistent and greppable, not to enable customisation.
 
+## The prompt regression suite
+
+The on-device model is the one dependency in the app that changes without the app changing.
+An operating system update replaces it, some learners install one within days of release, and
+prompt behaviour can shift with no error and no failing build — the first thing that notices is
+otherwise a learner being told they missed a rubric point they covered.
+
+`xforceTests/PromptRegressionTests.swift` is the early warning. Six authored learner
+explanations are run through the real model, and the assertions are set comparisons over the
+rubric point numbers it reports as covered and the misconception ids it reports as detected.
+Those comparisons are writable only because the generated type is small: the missing rubric
+points are computed in Swift and the connected concepts come from the ontology, so the two
+judged fields are a set of integers and a set of enum cases rather than prose. The Socratic
+question is never asserted on.
+
+### Running it
+
+The suite is **excluded from the default run** and gated behind `XFORCE_PROMPT_REGRESSION`.
+It needs a Mac eligible for Apple Intelligence with the model downloaded, it spends real
+inference time per fixture, and the model is not deterministic — putting it in the default run
+would mean the rule about never reporting a change as working without a green suite could not
+be honoured on the hardware most people have.
+
+```sh
+# default run: the gated suite is skipped, everything else runs
+xcodebuild -project xforce.xcodeproj -scheme xforce -derivedDataPath .build/DerivedData test
+
+# real inference, this suite only
+TEST_RUNNER_XFORCE_PROMPT_REGRESSION=1 \
+  xcodebuild -project xforce.xcodeproj -scheme xforce \
+  -derivedDataPath .build/DerivedData -parallel-testing-enabled NO \
+  test -only-testing:xforceTests/PromptRegressionTests
+```
+
+The `TEST_RUNNER_` prefix is required from the command line: the test host does not inherit the
+shell's environment, and `xcodebuild` forwards only variables named that way, stripping the
+prefix so the suite sees plain `XFORCE_PROMPT_REGRESSION`. From Xcode, add
+`XFORCE_PROMPT_REGRESSION` to the test action's environment variables instead.
+
+What *can* run everywhere runs in the default suite: `PromptRegressionFixtureTests` checks that
+every fixture names content that still ships, expects rubric numbers its concept actually has,
+and expects misconceptions that concept authors — so a fixture cannot rot against the ontology
+while nobody has eligible hardware to hand.
+
+### When it fails after an operating system update
+
+**Re-examine the prompt. Do not loosen the assertions.** The expectations are a human judgement
+about what correct feedback on a learner's words looks like, written from the rubric rather than
+from model output; editing one to match new output converts a signal into silence and leaves the
+learner as the next thing that detects the drift.
+
+1. Re-read the failing explanation and decide, as a person, what it really covers. If the
+   expectation was wrong about the *text*, correct it and say so — that is fixing an authoring
+   mistake, not loosening an assertion.
+2. Otherwise the prompt is what moved. The instructions live in `OnDeviceFeedbackService`; the
+   rubric and misconception catalogue it is handed come from `content.json`.
+3. Re-run before concluding anything. One run is evidence; two agreeing runs are a result.
+
+Fixtures encode a judgement, so a change to one is reviewed by a person the same way the
+authored content is.
+
 ## Deliberately absent
 
 Each row below named a missing layer and the trigger that would introduce it. Three of those
