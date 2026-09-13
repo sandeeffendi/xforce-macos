@@ -27,9 +27,12 @@ branch names, PR titles and descriptions. Conversation may be in any language; f
 ```
 xforce/
 ├── App/          App entry point and the window/scene shell
+├── Content/      Read-only bundle data (the ontology and its snippets)
 ├── Core/         Cross-feature code. Nothing here may import a feature.
 │   ├── Navigation/    AppSection, AppRoute, Router, RouteBuilder
 │   ├── DesignSystem/  Theme tokens and shared components
+│   ├── Models/        Domain types shared by more than one feature
+│   ├── Services/      Loading and operating on that data
 │   └── ViewState.swift
 ├── Features/     One folder per feature, each split Models/ ViewModels/ Views/
 └── Assets.xcassets
@@ -87,6 +90,41 @@ URL Types (this cannot be expressed through `GENERATE_INFOPLIST_FILE`).
 - **Model** is plain Swift. No SwiftUI, no view-model references.
 
 View models are tested directly; views are not unit-tested.
+
+### Getting a service into a view model
+
+A view owns its view model with `@State`, and services are read from `@Environment` — but an
+`@Environment` value is not available when a `@State` property's initial value is computed.
+The resolution, settled on issue #3 and applied by every screen since, is to split the screen
+in two: an outer view reads the environment, and an inner view owns a view model that is
+complete the moment it exists.
+
+```swift
+struct ExplainScreen: View {
+    @Environment(ContentService.self) private var content
+
+    var body: some View {
+        ExplainScreenContent(content: content)
+    }
+}
+
+private struct ExplainScreenContent: View {
+    @State private var viewModel: ExplainViewModel
+
+    init(content: ContentService) {
+        _viewModel = State(initialValue: ExplainViewModel(content: content))
+    }
+}
+```
+
+The view model's dependencies are `let` constants, so there is no optional service and no
+"not configured yet" state for an intent method to defend, and a test constructs the view
+model directly with a fake. The cost is one extra private view type per screen.
+
+`State(initialValue:)` is honoured only when the view's identity is first established, so a
+service instance replaced at runtime would not reach the view model. Services are created once
+in `XforceApp` and never replaced, so that cannot happen today — a change to service lifetime
+has to revisit this.
 
 ## Theming
 
