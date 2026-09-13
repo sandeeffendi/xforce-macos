@@ -115,4 +115,16 @@ nonisolated enum MasteryLevel: String, CaseIterable, Sendable {
             self = .strong
         }
     }
+
+    /// What the level is called where it is shown. Words, not only a colour: the graph pairs
+    /// every node's colour with this in its legend and in the node's accessibility label, so
+    /// the meaning survives a screen reader and a colour-blind reader alike.
+    var title: String {
+        switch self {
+        case .untouched: "Not yet attempted"
+        case .weak: "Struggling"
+        case .developing: "Developing"
+        case .strong: "Strong"
+        }
+    }
 }

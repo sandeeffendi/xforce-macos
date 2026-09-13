@@ -8,19 +8,12 @@ import Testing
 
 /// Scaffolding view models that still have no domain behaviour.
 ///
-/// The explain view model has left this suite: it now drives the loop, and is covered by
-/// `ExplainViewModelTests` through the intent methods a learner's screen would call.
+/// Two view models have left this suite. The explain view model drives the loop and is covered
+/// by `ExplainViewModelTests`; the graph view model builds the concept map and is covered by
+/// `GraphViewModelTests`. Both are exercised through the intent methods a learner's screen
+/// would call.
 @MainActor
 struct ViewModelTests {
-
-    @Test func graphViewModelLoadsFromIdle() {
-        let viewModel = GraphViewModel()
-        #expect(viewModel.state == .idle)
-
-        viewModel.load()
-
-        #expect(viewModel.state == .loaded)
-    }
 
     @Test func settingsViewModelLoadsFromIdle() {
         let viewModel = SettingsViewModel()

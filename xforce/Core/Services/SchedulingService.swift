@@ -96,6 +96,21 @@ final class SchedulingService {
         return try modelContext.fetch(descriptor).first
     }
 
+    /// Which box every concept the learner has committed a session on currently sits in,
+    /// keyed by concept id.
+    ///
+    /// A concept absent from the result has never been attempted — a different thing from one
+    /// sitting in the first box, and the distinction the graph's colouring rests on. Returned
+    /// as plain values rather than as records so that the graph reads what it needs in one
+    /// fetch and holds nothing from the store.
+    func boxesByConceptID() throws -> [String: Int] {
+        try modelContext
+            .fetch(FetchDescriptor<ConceptProgress>())
+            .reduce(into: [:]) { boxes, progress in
+                boxes[progress.conceptID] = progress.box
+            }
+    }
+
     /// Every snippet the learner has worked through, against the last time they saw it.
     ///
     /// This is what keeps snippet selection deterministic without the selection rule knowing

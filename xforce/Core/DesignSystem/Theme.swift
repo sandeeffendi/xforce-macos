@@ -32,6 +32,29 @@ enum Theme {
         /// rather than a tinted system red, so the dark appearance is authored rather than
         /// inherited from whatever 12% of red happens to look like on a dark surface.
         static let mismatchHighlight = SwiftUI.Color.diffMismatch
+
+        /// The mastery palette the concept graph colours its nodes by. Authored color sets
+        /// with Any + Dark variants rather than tinted system colors, because a graph read at
+        /// a glance needs four levels that stay apart in both appearances.
+        ///
+        /// `untouched` is a neutral grey and deliberately far from `weak`: "not yet attempted"
+        /// and "attempted and struggling" are different things, and a learner who confused
+        /// them would misread their own progress.
+        static let masteryUntouched = SwiftUI.Color.masteryUntouched
+        static let masteryWeak = SwiftUI.Color.masteryWeak
+        static let masteryDeveloping = SwiftUI.Color.masteryDeveloping
+        static let masteryStrong = SwiftUI.Color.masteryStrong
+
+        /// The one place a mastery level becomes a colour, so the graph's nodes and its
+        /// legend cannot drift apart.
+        static func mastery(_ level: MasteryLevel) -> SwiftUI.Color {
+            switch level {
+            case .untouched: masteryUntouched
+            case .weak: masteryWeak
+            case .developing: masteryDeveloping
+            case .strong: masteryStrong
+            }
+        }
     }
 
     enum Spacing {
@@ -76,5 +99,16 @@ enum Theme {
         static let inspectorMinWidth: CGFloat = 260
         static let inspectorIdealWidth: CGFloat = 320
         static let inspectorMaxWidth: CGFloat = 420
+
+        /// The concept graph. A node is a circle of this diameter with its name beneath it,
+        /// and the canvas is inset by enough to keep a node authored at the very edge of the
+        /// unit square fully on screen.
+        static let graphNodeDiameter: CGFloat = 22
+        static let graphNodeBorder: CGFloat = 2
+        static let graphNodeLabelWidth: CGFloat = 120
+        static let graphEdgeWidth: CGFloat = 1.5
+        static let graphDash: CGFloat = 4
+        static let graphCanvasMinHeight: CGFloat = 320
+        static let masterySwatch: CGFloat = 12
     }
 }
