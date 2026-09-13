@@ -50,9 +50,7 @@
           "name": "nil is the same as 0, an empty string, or false",
           "correction": "nil means there is no value at all. An `Int?` holding 0 and an `Int?` holding nil are different things, and only one of them has a number in it."
         }
-      ],
-      "prerequisites": [],
-      "related": []
+      ]
     }
   ],
   "snippets": [

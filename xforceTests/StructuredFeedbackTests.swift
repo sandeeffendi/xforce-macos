@@ -477,6 +477,9 @@ extension ContentLibrary {
                     id: "optionals",
                     name: "Optionals",
                     summary: "A value that may be absent.",
+                    position: ConceptPosition(x: 0.5, y: 0.5),
+                    prerequisites: ["variables"],
+                    related: ["closures", "optionals", "vanished-concept"],
                     rubric: [
                         RubricPoint(number: 1, text: "An optional either holds a value or holds nil."),
                         RubricPoint(number: 2, text: "Printing an optional shows the wrapper."),
@@ -495,14 +498,15 @@ extension ContentLibrary {
                             name: "An optional can be used wherever the underlying value can",
                             correction: "`Int?` and `Int` are distinct types."
                         ),
-                    ],
-                    prerequisites: ["variables"],
-                    related: ["closures", "optionals", "vanished-concept"]
+                    ]
                 ),
                 Concept(
                     id: "variables",
                     name: "Variables",
                     summary: "A name bound to a value.",
+                    position: ConceptPosition(x: 0.2, y: 0.5),
+                    prerequisites: [],
+                    related: [],
                     rubric: [RubricPoint(number: 1, text: "A let binding cannot be reassigned.")],
                     misconceptions: [
                         Misconception(
@@ -510,14 +514,15 @@ extension ContentLibrary {
                             name: "nil is the same as 0",
                             correction: "nil means there is no value at all."
                         )
-                    ],
-                    prerequisites: [],
-                    related: []
+                    ]
                 ),
                 Concept(
                     id: "closures",
                     name: "Closures",
                     summary: "A function that captures its surroundings.",
+                    position: ConceptPosition(x: 0.8, y: 0.5),
+                    prerequisites: [],
+                    related: [],
                     rubric: [RubricPoint(number: 1, text: "A closure captures by reference.")],
                     misconceptions: [
                         Misconception(
@@ -525,9 +530,7 @@ extension ContentLibrary {
                             name: "`??` unwraps everywhere",
                             correction: "`??` produces a non-optional result for that expression only."
                         )
-                    ],
-                    prerequisites: [],
-                    related: []
+                    ]
                 ),
             ],
             snippets: [

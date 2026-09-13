@@ -980,6 +980,9 @@ private extension FeedbackPanel {
             id: "optionals",
             name: "Optionals",
             summary: "A value that may be absent.",
+            position: ConceptPosition(x: 0.5, y: 0.5),
+            prerequisites: ["variables"],
+            related: [],
             rubric: [
                 RubricPoint(number: 1, text: "An optional either holds a value or holds nil."),
                 RubricPoint(number: 2, text: "Printing an optional shows the Optional(...) wrapper."),
@@ -991,9 +994,7 @@ private extension FeedbackPanel {
                     name: "Printing an optional prints the value it holds",
                     correction: "print describes the optional itself, so an Int? holding 5 prints as Optional(5)."
                 )
-            ],
-            prerequisites: ["variables"],
-            related: []
+            ]
         )
 
         return ScrollView {
@@ -1016,10 +1017,11 @@ private extension FeedbackPanel {
                         id: "variables",
                         name: "Variables",
                         summary: "A name bound to a value, and whether that binding can change.",
-                        rubric: [],
-                        misconceptions: [],
+                        position: ConceptPosition(x: 0.2, y: 0.5),
                         prerequisites: [],
-                        related: []
+                        related: [],
+                        rubric: [],
+                        misconceptions: []
                     )
                 ]
             )

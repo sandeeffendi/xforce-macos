@@ -86,28 +86,9 @@ struct ContentIntegrityTests {
         }
     }
 
-    @Test func everyPrerequisiteAndRelatedIdResolvesToAConceptThatExists() {
-        let service = ContentService()
-        let conceptIDs = Set(service.concepts.map(\.id))
-
-        for concept in service.concepts {
-            for id in concept.prerequisites + concept.related {
-                #expect(conceptIDs.contains(id), "\(concept.id) points at a concept \(id) that does not exist")
-            }
-        }
-    }
-
-    @Test func noConceptNamesItselfAsOneOfItsOwnNeighbours() {
-        let service = ContentService()
-
-        for concept in service.concepts {
-            #expect(
-                (concept.prerequisites + concept.related).contains(concept.id) == false,
-                "\(concept.id) names itself as a neighbour"
-            )
-        }
-    }
-
+    /// Edge resolution and self-reference are asserted by `ContentGraphIntegrityTests` below,
+    /// which owns the authored edges. The panel's "connect this" section reads the same two
+    /// fields, so it is covered by the same guarantee rather than by a second copy of it.
     @Test func misconceptionIdsAreUniqueAcrossTheWholeOntology() {
         let service = ContentService()
         let ids = service.concepts.flatMap { $0.misconceptions.map(\.id) }
@@ -273,9 +254,7 @@ extension ContentLibrary {
                             name: "Printing an optional prints the value it holds",
                             correction: "Printing an optional shows the Optional(...) wrapper."
                         )
-                    ],
-                    prerequisites: [],
-                    related: []
+                    ]
                 )
             ],
             snippets: [
