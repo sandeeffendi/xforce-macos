@@ -45,11 +45,13 @@ struct AppRootView: View {
 #Preview("Light") {
     AppRootView()
         .environment(Router())
+        .environment(ContentService())
         .preferredColorScheme(.light)
 }
 
 #Preview("Dark") {
     AppRootView()
         .environment(Router())
+        .environment(ContentService())
         .preferredColorScheme(.dark)
 }

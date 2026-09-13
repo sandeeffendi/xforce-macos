@@ -22,6 +22,14 @@ enum Theme {
         static let secondaryText = SwiftUI.Color.secondary
         static let separator = SwiftUI.Color(nsColor: .separatorColor)
         static let windowBackground = SwiftUI.Color(nsColor: .windowBackgroundColor)
+
+        /// Outcome colors. Always paired with a symbol and with words, never carrying the
+        /// meaning on their own.
+        static let success = SwiftUI.Color.green
+        static let failure = SwiftUI.Color.red
+
+        /// The wash behind a diff line that does not match.
+        static let mismatchHighlight = SwiftUI.Color.red.opacity(0.12)
     }
 
     enum Spacing {
@@ -43,5 +51,19 @@ enum Theme {
         static let sectionTitle = SwiftUI.Font.system(.headline)
         static let body = SwiftUI.Font.system(.body)
         static let caption = SwiftUI.Font.system(.caption)
+
+        /// Monospaced, for anything that is literally console text: snippets, predictions,
+        /// and the real output they are compared against.
+        static let code = SwiftUI.Font.system(.body, design: .monospaced)
+    }
+
+    /// Fixed dimensions that are not spacing or radius, kept here for the same reason:
+    /// so no view file carries a bare number.
+    enum Size {
+        static let predictionEditorHeight: CGFloat = 140
+        static let explanationEditorHeight: CGFloat = 110
+        static let contentMaxWidth: CGFloat = 760
+        static let outcomeSymbol: CGFloat = 22
+        static let diffMarker: CGFloat = 14
     }
 }
