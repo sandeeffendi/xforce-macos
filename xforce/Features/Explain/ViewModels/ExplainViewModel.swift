@@ -12,15 +12,16 @@ import Observation
 /// is revealed. Nothing here executes Swift: the ground truth is the snippet's authored
 /// `expectedOutput`.
 ///
-/// This slice covers `prompt` through `feedback`. Writing the note and updating the schedule
-/// — the `committed` phase — arrives in a later slice and extends the same state machine
-/// rather than replacing it.
+/// The state machine now runs end to end, `prompt` through `committed`. The structured
+/// feedback the panel will hold arrives in a later slice and extends the same machine rather
+/// than replacing it.
 @MainActor
 @Observable
 final class ExplainViewModel {
 
     private let content: ContentService
     private let feedback: any FeedbackService
+    private let scheduling: SchedulingService
 
     private(set) var state: ViewState = .idle
     private(set) var phase: LoopPhase = .prompt
@@ -44,6 +45,17 @@ final class ExplainViewModel {
     /// same handle to await the call rather than polling for it.
     @ObservationIgnored private(set) var generationTask: Task<Void, Never>?
 
+    /// Where the concept stands in the schedule once the session has been committed.
+    private(set) var progress: ConceptProgress?
+
+    /// The snippet the loop moves on to, chosen at commit so that what comes next is settled
+    /// before the learner is asked to move on.
+    private(set) var nextSnippet: Snippet?
+
+    /// Why the commit could not be saved, or `nil`. Kept apart from ``state`` so that a store
+    /// refusing a write does not replace the screen and take the unsaved session with it.
+    private(set) var commitFailure: String?
+
     /// What the learner thinks the snippet prints, verbatim.
     var prediction = ""
 
@@ -65,19 +77,19 @@ final class ExplainViewModel {
 
     /// What they did with the question, once they have done it.
     ///
-    /// Kept in view-model state for now. Storing it against the session is the commit
-    /// slice's territory, and this is the seam it reads from: an answered response carries
-    /// the text, a skip carries nothing, and `nil` here means the question was never asked
-    /// because the model could not be reached.
+    /// The commit reads it from here and writes it into the note: an answered response carries
+    /// the text, a skip carries nothing, and `nil` means the question was never asked because
+    /// the model could not be reached.
     private(set) var socraticResponse: SocraticResponse?
 
     private var writtenExplanation = ""
 
     @ObservationIgnored private var hasPrewarmed = false
 
-    init(content: ContentService, feedback: any FeedbackService) {
+    init(content: ContentService, feedback: any FeedbackService, scheduling: SchedulingService) {
         self.content = content
         self.feedback = feedback
+        self.scheduling = scheduling
         availability = feedback.availability
     }
 
@@ -115,6 +127,17 @@ final class ExplainViewModel {
     /// could otherwise have been disabled one by one hangs off this single value.
     var isFeedbackLocked: Bool { phase.isFeedbackUnlocked == false }
 
+    /// Whether the session can be written down.
+    ///
+    /// Not before `feedback`. Committing jumps the loop past every phase between here and
+    /// there, so a commit offered at the reveal would be a way around the question — the one
+    /// thing the gate exists to prevent. Every degradation path still reaches `feedback`: an
+    /// unavailable model, a failed generation and a cancelled one all unlock it carrying their
+    /// reason, so nobody is stranded short of the commit.
+    var canCommit: Bool {
+        phase >= .feedback && phase < .committed && snippet != nil
+    }
+
     /// Puts the learner on a snippet. A loop that has already moved past `prompt` is left
     /// alone, so a re-entered screen never rewinds work in progress.
     func load() {
@@ -125,13 +148,20 @@ final class ExplainViewModel {
             return
         }
 
-        guard let snippet = content.firstSnippet else {
+        let seen: [String: Date]
+        do {
+            seen = try scheduling.seenSnippets()
+        } catch {
+            state = .failed(Self.storeUnreadableMessage)
+            return
+        }
+
+        guard let snippet = content.nextSnippet(seen: seen) else {
             state = .failed(ContentError.empty.message)
             return
         }
 
-        self.snippet = snippet
-        concept = content.concept(withID: snippet.conceptID)
+        show(snippet)
         state = .loaded
     }
 
@@ -241,12 +271,80 @@ final class ExplainViewModel {
         feedback.prewarm()
     }
 
-    /// The only way the phase changes. A transition that does not advance is refused, which
-    /// is what makes the loop forward-only.
+    /// Writes the session down and moves the concept through the schedule.
+    ///
+    /// The note is immutable, so this is the only moment the learner's prediction and reasoning
+    /// are captured — and it happens once. A second call is refused by the forward-only rule,
+    /// which is what keeps one commit to one note.
+    func commit() {
+        guard canCommit, let snippet, let outcome else { return }
+
+        let note = Note(
+            conceptID: snippet.conceptID,
+            snippetID: snippet.id,
+            prediction: prediction,
+            explanation: explanation,
+            socraticQuestion: socraticQuestion,
+            socraticAnswer: socraticResponse?.storedAnswer,
+            outcome: outcome.sessionOutcome
+        )
+
+        do {
+            progress = try scheduling.record(note)
+        } catch {
+            commitFailure = Self.storeUnwritableMessage
+            return
+        }
+
+        // Saved. Nothing from here may report the commit as failed, or the learner would
+        // write the same session down twice.
+        commitFailure = nil
+        nextSnippet = (try? scheduling.seenSnippets()).flatMap(content.nextSnippet(seen:))
+        advance(to: .committed)
+    }
+
+    /// Begins a fresh pass on the snippet the commit chose.
+    ///
+    /// The forward-only rule governs one pass through the loop, and a committed session is the
+    /// end of one. This is the only place a new pass begins, and therefore the only place that
+    /// sets the phase without going through ``advance(to:)``.
+    func startNextSnippet() {
+        guard phase == .committed, let nextSnippet else { return }
+
+        show(nextSnippet)
+        prediction = ""
+        writtenExplanation = ""
+        socraticAnswer = ""
+        socraticResponse = nil
+        generation = .idle
+        generationTask = nil
+        diff = nil
+        outcome = nil
+        progress = nil
+        self.nextSnippet = nil
+        commitFailure = nil
+        phase = .prompt
+    }
+
+    /// The only way the phase changes within one pass. A transition that does not advance is
+    /// refused, which is what makes the loop forward-only.
     private func advance(to next: LoopPhase) {
         guard next > phase else { return }
         phase = next
     }
+
+    private func show(_ snippet: Snippet) {
+        self.snippet = snippet
+        concept = content.concept(withID: snippet.conceptID)
+    }
+
+    /// The store holds the only copy of the learner's work, so neither failure is allowed to
+    /// pass as though the session had been saved.
+    private static let storeUnreadableMessage =
+        "Your notes and progress could not be read, so there is nothing to practise against."
+
+    private static let storeUnwritableMessage =
+        "This session could not be saved. Nothing has been lost — try committing it again."
 }
 
 private extension String {

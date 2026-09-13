@@ -366,7 +366,10 @@ struct SocraticGateTests {
         let content = ContentService(
             library: .fixture(code: "print(1)", expectedOutput: expectedOutput)
         )
-        return (ExplainViewModel(content: content, feedback: service), service)
+        return (
+            ExplainViewModel(content: content, feedback: service, scheduling: .inMemory()),
+            service
+        )
     }
 
     private func submitCorrectly(_ viewModel: ExplainViewModel) {

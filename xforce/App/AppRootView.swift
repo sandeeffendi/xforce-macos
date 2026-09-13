@@ -46,6 +46,7 @@ struct AppRootView: View {
     AppRootView()
         .environment(Router())
         .environment(ContentService())
+        .environment(SchedulingService.inMemory())
         .preferredColorScheme(.light)
 }
 
@@ -53,5 +54,6 @@ struct AppRootView: View {
     AppRootView()
         .environment(Router())
         .environment(ContentService())
+        .environment(SchedulingService.inMemory())
         .preferredColorScheme(.dark)
 }

@@ -16,9 +16,10 @@ import SwiftUI
 struct ExplainScreen: View {
     @Environment(ContentService.self) private var content
     @Environment(\.feedback) private var feedback
+    @Environment(SchedulingService.self) private var scheduling
 
     var body: some View {
-        ExplainScreenContent(content: content, feedback: feedback)
+        ExplainScreenContent(content: content, feedback: feedback, scheduling: scheduling)
     }
 }
 
@@ -29,8 +30,10 @@ private struct ExplainScreenContent: View {
     ///   established, so a service instance replaced later would not reach the view model.
     ///   Services are created once in `XforceApp` and never replaced, so that cannot happen
     ///   today; a change to service lifetime has to revisit this.
-    init(content: ContentService, feedback: any FeedbackService) {
-        _viewModel = State(initialValue: ExplainViewModel(content: content, feedback: feedback))
+    init(content: ContentService, feedback: any FeedbackService, scheduling: SchedulingService) {
+        _viewModel = State(
+            initialValue: ExplainViewModel(content: content, feedback: feedback, scheduling: scheduling)
+        )
     }
 
     var body: some View {
@@ -109,9 +112,48 @@ private struct ExplainScreenContent: View {
             if viewModel.phase == .socratic, let question = viewModel.socraticQuestion {
                 socraticFields(question: question)
             }
+
+            if let progress = viewModel.progress, viewModel.phase == .committed {
+                CommittedPanel(
+                    conceptName: viewModel.concept?.name ?? "",
+                    progress: progress,
+                    hasNextSnippet: viewModel.nextSnippet != nil,
+                    onContinue: { viewModel.startNextSnippet() }
+                )
+            } else if viewModel.canCommit {
+                commitControls
+            }
         }
         .frame(maxWidth: Theme.Size.contentMaxWidth, alignment: .leading)
         .padding(Theme.Spacing.xLarge)
+    }
+
+    /// Writing the session down is the learner's own act, so it is a control rather than
+    /// something that happens to them the moment the panel unlocks.
+    @ViewBuilder
+    private var commitControls: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.small) {
+            Button("Save this session") {
+                viewModel.commit()
+            }
+            .buttonStyle(.borderedProminent)
+
+            Text("Your note is written once and never edited. It records what you thought here.")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.secondaryText)
+
+            if let commitFailure = viewModel.commitFailure {
+                Label {
+                    Text(commitFailure)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Theme.Color.failure)
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -414,6 +456,58 @@ private struct DiffRow: View {
     }
 }
 
+/// What the commit did: the note is written, and the concept has moved through the schedule.
+///
+/// Which box the concept landed in is stated plainly, because it is the whole consequence of
+/// having been right or wrong and the learner is entitled to see it before moving on. When it
+/// next falls due is deliberately *not* shown: nothing re-engages the learner on a due date in
+/// this version, and a date nothing acts on is a promise the app cannot keep.
+private struct CommittedPanel: View {
+    let conceptName: String
+    let progress: ConceptProgress
+    let hasNextSnippet: Bool
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.medium) {
+            Label {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xSmall) {
+                    Text("Saved to your notes")
+                        .font(Theme.Font.sectionTitle)
+                        .foregroundStyle(Theme.Color.primaryText)
+
+                    Text(scheduleSummary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } icon: {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(Theme.Font.outcomeSymbol)
+                    .foregroundStyle(Theme.Color.brand)
+            }
+
+            if hasNextSnippet {
+                Button("Next snippet") {
+                    onContinue()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(Theme.Spacing.medium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.medium)
+                .strokeBorder(Theme.Color.separator)
+        )
+    }
+
+    private var scheduleSummary: String {
+        "\(conceptName) is now in box \(progress.box) of \(ConceptProgress.lastBox)."
+    }
+}
+
 /// The model asking, not telling. Marked as the model's words so the learner never
 /// misremembers them as their own.
 private struct SocraticQuestionCard: View {
@@ -535,6 +629,7 @@ private struct FeedbackInspector: View {
     ExplainScreen()
         .environment(Router())
         .environment(ContentService())
+        .environment(SchedulingService.inMemory())
         .preferredColorScheme(.light)
 }
 
@@ -542,5 +637,6 @@ private struct FeedbackInspector: View {
     ExplainScreen()
         .environment(Router())
         .environment(ContentService())
+        .environment(SchedulingService.inMemory())
         .preferredColorScheme(.dark)
 }
